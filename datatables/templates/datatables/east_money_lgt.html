@@ -1,0 +1,377 @@
+{% extends "datatables/index.html" %}
+{% block title %}east_money_lgt{% endblock %}
+{% block extra_css %}
+    <style>
+        .table-demo {
+            width: 80%;
+            margin: 30px auto 0px auto;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<form class="form-inline" role="form" target='ifr'>
+	<div class="form-group">
+		<input name="search" type="text" class="form-control" id="name" placeholder="请输入名称">
+	</div>
+	<button type="submit" class="btn btn-default">提交</button>
+</form>
+<iframe name='ifr' id="ifr" style='display: none;'></iframe>
+<nav class="navbar navbar-inverse" role="navigation">
+	<div class="container-fluid">
+        <div class="navbar-header">
+            <a class="navbar-brand" href="javascript:document:submit('baidu');">百度</a>
+        </div>
+        <div>
+            <ul class="nav navbar-nav">
+                <li class="active"><a href="javascript:document:submit('jisilu');">集思录</a></li>
+                <li><a href="#">SVN</a></li>
+                <li class="dropdown">
+                    <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        Java <b class="caret"></b>
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a href="#">jmeter</a></li>
+                        <li><a href="#">EJB</a></li>
+                        <li><a href="#">Jasper Report</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">分离的链接</a></li>
+                        <li class="divider"></li>
+                        <li><a href="#">另一个分离的链接</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+	</div>
+</nav>
+<div>
+    <ul id="stock_choice">
+    </ul>
+</div>
+<br/>
+<br/>
+选择正确交易日，非交易日无法获取数据
+<br/>
+<br/>
+<input id="my_date" type="date" value=""/>
+<br/>
+<br/>
+<button id="east_dragon" onclick="read_east_dragon()">读入东财龙虎榜，选正确交易日</button>
+<br/>
+<br/>
+<button onclick="open_dragon()">打开dragon板块龙虎榜页面</button>
+<br/>
+<br/>
+<button onclick="shown_choice()">显示choice板块个股</button>
+<br/>
+<br/>
+<button id="read_self" onclick="read_self()">读choice入自选and海通</button>
+<br/>
+<br/>
+<button id="east_lgt" onclick="east_lgt_finance('east_lgt')">东财陆股通，选正确交易日</button>
+<br/>
+<br/>
+<button id="ths_lgt" onclick="read_ths_lgt()">同花顺陆股通，选正确交易日</button>
+<br/>
+<br/>
+<button id="ths_notice" onclick="ths_notice_good()">同花顺公告利好，选正确交易日</button>
+<br/>
+<br/>
+<button id="up_rise" onclick="ths_rise('5', 'up_rise')">同花顺涨幅大于5，选正确交易日</button>
+<br/>
+<br/>
+<button id="rise" onclick="ths_rise('10', 'rise')">同花顺涨停个股，选正确交易日</button>
+<br/>
+<br/>
+<input id="ths_in" type="text" style="width:550px; height=30px;/>
+<button id="ths_choice" onclick="ths_choice()">同花顺选股，选正确交易日</button>
+<br/>
+<br/>
+<button id="pre_paid_inform" onclick="pre_paid()">交易日5.30后方能提交预埋单</button>
+<br/>
+<br/>
+<button id="east_finance_sh" onclick="east_lgt_finance('east_finance_sh')">东财融资上海，选正确交易日</button>
+<br/>
+<br/>
+<button id="east_finance_sz" onclick="east_lgt_finance('east_finance_sz')">东财融资深圳，选正确交易日</button>
+<br/>
+<br/>
+<button id="east_finance_number" onclick="east_lgt_finance('east_finance_number')">东财融资股票数量，选正确交易日</button>
+<br/>
+<br/>
+<button id="east_lgt_number" onclick="east_lgt_finance('east_lgt_number')">东财陆股通股票数量，选正确交易日</button>
+<br/>
+<br/>
+<button id="ths_fund_inflow" onclick="east_lgt_finance('ths_fund_inflow')">同花顺资金流入大于2500，选正确交易日</button>
+<br/>
+<br/>
+<button id="ths_fund_inflow0" onclick="east_lgt_finance('ths_fund_inflow0')">同花顺资金流入大于0，选正确交易日</button>
+<br/>
+<br/>
+<input id="start_date" type="date" value=""/>开始日期小
+<br/>
+<br/>
+<input id="end_date" type="date" value=""/>结束日期大
+<br/>
+<br/>
+<button id="research_report" onclick="east_lgt_finance('research_report')">东财研报股票数量，选正确时间段</button>
+<br/>
+<br/>
+<button id="research_organization" onclick="east_lgt_finance('research_organization')">东财机构调研股票数量，选正确时间段</button>
+<br/>
+<br/>
+<button id="combine" onclick="east_lgt_finance('combine')">交集和并集</button>
+<br/>
+<br/>
+
+<button onclick="open360('360')">打开360</button>
+
+<script>
+var now = new Date();
+<!--获取当前星期几-->
+function getWeekDate() {
+    var day = now.getDay();
+    return day;
+}
+<!--获取当前日期-->
+function getNowDay() {
+    //格式化日，如果小于9，前面补0
+    var day = ("0" + now.getDate()).slice(-2);
+    //格式化月，如果小于9，前面补0
+    var month = ("0" + (now.getMonth() + 1)).slice(-2);
+    //拼装完整日期格式
+    var today = now.getFullYear()+"-"+(month)+"-"+(day);
+    return today;
+}
+var today = getNowDay();
+document.getElementById("my_date").value=(today);
+$("#start_date").val(today);
+$("#end_date").val(today);
+
+<!--显示choice板块个股-->
+function shown_choice(){
+    $.ajax({
+　　　　type:'get',
+　　　　url:'',
+　　　　data:{ 'shown_choice':'shown_choice'},
+　　　　success:function(data){
+            <!--console.log(data.stock_choice)-->
+            var str_li = "";
+            for(const code of data.stock_choice){
+                str_li += "<li onclick=\"shown_detail('"+ code +"')\">" + code + "</li>"
+            }
+            document.getElementById("stock_choice").innerHTML= str_li;
+　　　　},
+　　　　error: function (XMLHttpRequest, textStatus, errorThrown){
+            document.getElementById("stock_choice").innerHTML="失败" + textStatus;
+　　　　}
+　　});
+}
+
+<!--打开choice个股百度，东财，雪球详情页-->
+function shown_detail(code_name){
+    $.ajax({
+　　　　type:'get',
+　　　　url:'',
+　　　　data:{'code_name':code_name, 'open_stock_detail':'open_stock_detail'},
+　　　　success:function(data){
+　　　　},
+　　　　error: function (XMLHttpRequest, textStatus, errorThrown){
+　　　　}
+　　});
+}
+
+<!--读入东财龙虎榜-->
+function read_east_dragon(){
+    <!--var date = $(my_date).val();-->
+    <!--alert(date);-->
+    $.ajax({
+　　　　type:'get',
+　　　　url:'',
+　　　　data:{'date':$(my_date).val(), 'east_dragon':'east_dragon'},
+　　　　success:function(data){
+            document.getElementById("east_dragon").innerHTML="成功" + data.number;
+　　　　},
+　　　　error: function (XMLHttpRequest, textStatus, errorThrown){
+            document.getElementById("east_dragon").innerHTML="失败" + textStatus;
+　　　　}
+　　});
+}
+
+<!--东财陆股通和融资,机构调研，研究报告，融资股票数量-->
+function east_lgt_finance(choice){
+    if (choice == "east_lgt") {
+        data = {'date':$('#my_date').val(), 'east_lgt':'east_lgt'};
+     } else if (choice == "east_finance_sh") {
+        data = {'date':$('#my_date').val(), 'east_finance_sh':'east_finance_sh'};
+     } else if (choice == "east_finance_number"){
+        data = {'date':$('#my_date').val(), 'east_finance_number':'east_finance_number'};
+     }else if (choice == "east_lgt_number"){
+        data = {'date':$('#my_date').val(), 'east_lgt_number':'east_lgt_number'};
+     }else if (choice == "research_report"){
+        data = {'start_date':$('#start_date').val(),'end_date':$('#end_date').val(), 'research_report':'research_report'};
+     }else if (choice == "research_organization"){
+        data = {'start_date':$('#start_date').val(),'end_date':$('#end_date').val(), 'research_organization':'research_organization'};
+     }else if (choice == "combine"){
+        data = { 'combine':'combine'};
+     }else if (choice == "east_finance_sz"){
+        data = { 'date':$('#my_date').val(), 'east_finance_sz':'east_finance_sz'};
+     }else if (choice == "ths_fund_inflow"){
+        data = { 'date':$('#my_date').val(), 'ths_fund_inflow':'ths_fund_inflow'};
+     }else if (choice == "ths_fund_inflow0"){
+        data = { 'date':$('#my_date').val(), 'ths_fund_inflow0':'ths_fund_inflow0'};
+     }
+    $.ajax({
+　　　　type:'get',
+　　　　url:'',
+　　　　data:data,
+　　　　success:function(data){
+            document.getElementById(choice).innerHTML="成功" + data.number;
+　　　　},
+　　　　error: function (XMLHttpRequest, textStatus, errorThrown){
+            document.getElementById(choice).innerHTML="失败" + textStatus;
+　　　　}
+　　});
+}
+
+<!--同花顺陆股通-->
+function read_ths_lgt(){
+    $.ajax({
+　　　　type:'get',
+　　　　url:'',
+　　　　data:{'date':$(my_date).val(), 'ths_lgt':'ths_lgt'},
+　　　　success:function(data){
+            document.getElementById("ths_lgt").innerHTML="成功" + data.number;
+<!--　　　　　　console.log("yes" + data.number);-->
+　　　　},
+　　　　error: function (XMLHttpRequest, textStatus, errorThrown){
+            document.getElementById("ths_lgt").innerHTML="失败" + textStatus;
+　　　　}
+　　});
+}
+
+<!--同花顺公告利好-->
+function ths_notice_good(){
+    $.ajax({
+　　　　type:'get',
+　　　　url:'',
+　　　　data:{'date':$(my_date).val(), 'ths_notice':'ths_notice'},
+　　　　success:function(data){
+            document.getElementById("ths_notice").innerHTML="成功" + data.number;
+<!--　　　　　　console.log("yes" + data.number);-->
+　　　　},
+　　　　error: function (XMLHttpRequest, textStatus, errorThrown){
+            document.getElementById("ths_notice").innerHTML="失败" + textStatus;
+　　　　}
+　　});
+}
+
+<!--同花顺涨停或大于5-->
+function ths_rise(up_rise, my_id){
+    $.ajax({
+　　　　type:'get',
+　　　　url:'',
+　　　　data:{'date':$(my_date).val(), 'ths_rise':'ths_rise', 'up_rise': up_rise},
+　　　　success:function(data){
+            document.getElementById(my_id).innerHTML="成功" + data.number;
+　　　　},
+　　　　error: function (XMLHttpRequest, textStatus, errorThrown){
+            document.getElementById(my_id).innerHTML="失败" + textStatus;
+　　　　}
+　　});
+}
+
+<!--同花顺选股-->
+function ths_choice(){
+    <!--var v = $("#ths_in").val();-->
+    <!--alert(v);-->
+    $.ajax({
+　　　　type:'get',
+　　　　url:'',
+　　　　data:{'ths_in':$('#ths_in').val(), 'ths_choice':'ths_choice'},
+　　　　success:function(data){
+            document.getElementById("ths_choice").innerHTML="成功" + data.number;
+　　　　},
+　　　　error: function (XMLHttpRequest, textStatus, errorThrown){
+            document.getElementById("ths_choice").innerHTML="失败" + textStatus;
+　　　　}
+　　});
+}
+
+<!--读choice入自选and海通-->
+function read_self(){
+    <!--alert(read_choice);-->
+    $.ajax({
+　　　　type:'get',
+　　　　url:'',
+　　　　data:{'read_self_choice':'read_self_choice'},
+　　　　success:function(data){
+            document.getElementById("read_self").innerHTML= data.is_success;
+　　　　},
+　　　　error: function (XMLHttpRequest, textStatus, errorThrown){
+            document.getElementById("read_self").innerHTML= textStatus;
+　　　　　　console.log(textStatus);
+　　　　}
+　　});
+}
+<!--打开dragon板块龙虎榜页面-->
+function open_dragon(){
+    $.ajax({
+　　　　type:'get',
+　　　　url:'',
+　　　　data:{ 'open_dragon':'open_dragon'},
+　　　　success:function(data){
+            var end_date = data.dragon_tiger.pop();
+            for (var code of data.dragon_tiger) {
+                <!--console.log("http://data.eastmoney.com/stock/lhb," + end_date + "," + code + ".html");-->
+                window.open("http://data.eastmoney.com/stock/lhb," + end_date + "," + code + ".html");
+            }
+　　　　},
+　　　　error: function (XMLHttpRequest, textStatus, errorThrown){
+　　　　　　console.log(textStatus);
+　　　　}
+　　});
+}
+
+<!--预埋单-->
+function pre_paid(){
+    $.ajax({
+　　　　type:'get',
+　　　　url:'',
+　　　　data:{pre_paid:'pre_paid', 'date':$(my_date).val()},
+　　　　success:function(data){
+            document.getElementById("pre_paid_inform").innerHTML= data.pre_paid;
+            <!--alert(data.pre_paid);-->
+　　　　},
+　　　　error: function (XMLHttpRequest, textStatus, errorThrown){
+            document.getElementById("pre_paid_inform").innerHTML= textStatus;
+　　　　}
+　　});
+}
+<!--打开360-->
+function open360(value){
+    <!--alert(value);-->
+    $.ajax({
+　　　　type:'get',
+　　　　url:'',
+　　　　data:{browser:value},
+　　　　success:function(data){
+　　　　　　console.log("yes");
+　　　　},
+　　　　error: function (XMLHttpRequest, textStatus, errorThrown){
+　　　　　　console.log(textStatus);
+　　　　}
+　　});
+}
+<!--打开百度和集思录，貌似没啥用？-->
+function submit(sort){
+    <!--alert(sort);-->
+    $.ajax({
+        type: "GET",
+        data: { search: $("input#name").val(), sort: sort },
+        success: function(data){
+        }
+    });
+}
+
+</script>
+{% endblock content %}

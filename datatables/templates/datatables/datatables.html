@@ -1,0 +1,114 @@
+{% load static wagtailuserbar %}
+{% load static %}
+{% load wagtailcore_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>数据展示</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'media/css/jquery.dataTables.css' %}">
+    <script type="text/javascript" charset="utf8" src="{% static 'media/js/jquery.js' %} "></script>
+    <script type="text/javascript" charset="utf8" src="{% static 'media/js/jquery.dataTables.js' %}"></script>
+
+</head>
+<body>
+<table border="0" cellspacing="5" cellpadding="5">
+    <tbody>
+    <tr>
+        <td>最小涨幅:</td>
+        <td><input type="text" id="min" name="min"></td>
+    </tr>
+    <tr>
+        <td>最大年龄:</td>
+        <td><input type="text" id="max" name="max"></td>
+    </tr>
+    </tbody>
+</table>
+<table id="example" class="display" style="width: 100%">
+    <thead>
+    <tr>
+        <th class="text-center">代码</th>
+        <th class="text-center">名称</th>
+        <th class="text-center">收盘价</th>
+        <th class="text-center">涨幅</th>
+        <th class="text-center">股数+</th>
+        <th class="text-center">市值+</th>
+        <th class="text-center">流通比</th>
+        <th class="text-center">总比</th>
+        <th class="text-center">addnumber</th>
+        <th class="text-center">addvalue</th>
+        <th class="text-center">addvaluerate</th>
+        <th class="text-center">addvalueratecirculate</th>
+        <th class="text-center">addvalueratetotal</th>
+        <th class="text-center">行业</th>
+        <th class="text-center">日期</th>
+
+    </tr>
+    </thead>
+</table>
+</body>
+<script>
+$.fn.dataTable.ext.search.push(
+    function( settings, data, dataIndex ) {
+        var min = parseInt( $('#min').val(), 10 );
+        var max = parseInt( $('#max').val(), 10 );
+        var age = parseFloat( data[3] ) || 0;
+
+        if ( ( isNaN( min ) && isNaN( max ) ) ||
+             ( isNaN( min ) && age <= max ) ||
+             ( min <= age   && isNaN( max ) ) ||
+             ( min <= age   && age <= max )
+            )
+        {
+            return true;
+        }else{
+            return false;
+        }
+
+    }
+);
+$(document).ready(function(){
+
+    var obj1 = {{ latest_question_list }};
+    console.log(obj1);
+    <!--var obj = JSON.parse(data1 );-->
+    <!--console.log(obj);-->
+    $('#example').DataTable( {
+        "deferRender": true,
+        "pageLength": 50,
+        <!--scrollY: 600,-->
+        scrollX: 600,
+        <!--paging: false,-->
+        data: obj1.data ,
+        columns: [
+                {data: 'code'},
+                {data: 'name'},
+                {data: 'todaycloseprice'},
+                {data: 'todayup'},
+                {data: 'todayquantity'},
+                {data: 'todayvalue'},
+                {data: 'circulaterate'},
+                {data: 'totalrate'},
+                {data: 'addnumber'},
+                {data: 'addvalue'},
+                {data: 'addvaluerate'},
+                {data: 'addvalueratecirculate'},
+                {data: 'addvalueratetotal'},
+                {data: 'trade'},
+                {data: 'date'},
+            ],
+            <!--导出和打印-->
+            <!--dom: 'Bfrtip',-->
+            <!--button: [-->
+                <!--'copy', 'csv', 'excel', 'pdf', 'print'-->
+            <!--],-->
+    } );
+    var table = $('#example').DataTable();
+
+    $('#min, #max').keyup( function() {
+        table.draw();
+    } );
+});
+
+</script>
+

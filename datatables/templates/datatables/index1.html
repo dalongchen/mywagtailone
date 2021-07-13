@@ -1,0 +1,30 @@
+{% load static wagtailuserbar %}
+{% load static %}
+{% load wagtailcore_tags %}
+<html lang="zh-CN">
+<head>
+<title>
+    {% block title %}
+        {% if self.seo_title %}{{ self.seo_title }}{% else %}{{ self.title }}{% endif %}
+    {% endblock %}
+    {% block title_suffix %}
+        {% with self.get_site.site_name as site_name %}
+            {% if site_name %}- {{ site_name }}{% endif %}
+        {% endwith %}
+    {% endblock %}
+</title>
+<link rel="shortcut icon" href="{% static 'media/images/favicon.ico' %}" type="image/x-icon" />
+<!-- 开发环境版本，包含了有帮助的命令行警告 -->
+<script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+{% block extra_js %}
+{% endblock %}
+<link rel="stylesheet" type="text/css" href="{% static 'css/mywagtailone.css' %}">
+{% block extra_css %}
+{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+{% block content %}
+    {% include 'datatables/bootstrap.html' %}
+{% endblock content %}
+</body>
+</html>

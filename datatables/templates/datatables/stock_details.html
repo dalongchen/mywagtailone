@@ -1,0 +1,27 @@
+{% extends "datatables/index1.html" %}
+{% block title %}stock_details{% endblock %}
+{% block extra_css %}
+<style>
+        .table-demo {
+            width: 80%;
+            margin: 30px auto 0px auto;
+        }
+    </style>
+{% endblock %}
+{% block content %}
+<div id="app">
+{% verbatim %}
+    <p>{{ message }}</p>
+{% endverbatim %}
+</div>
+<script>
+var d ={{ d | safe }};
+<!--alert(d["a"]);-->
+var app = new Vue({
+  el: '#app',
+  data: {
+    message: d["a"]
+  }
+})
+</script>
+{% endblock content %}
