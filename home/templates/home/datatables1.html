@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>数据展示</title>
+    <link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/1.10.15/css/jquery.dataTables.css">
+    <!-- jQuery -->
+    <script type="text/javascript" charset="utf8" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <!-- DataTables -->
+    <script type="text/javascript" charset="utf8" src="http://cdn.datatables.net/1.10.15/js/jquery.dataTables.js"></script>
+</head>
+<body>
+<table id="example" class="display" style="width: 100%">
+    <thead>
+    <tr>
+        <th class="text-center">code</th>
+        <th class="text-center">name</th>
+        <th class="text-center">todaycloseprice</th>
+        <th class="text-center">todayup</th>
+        <th class="text-center">todayquantity</th>
+        <th class="text-center">todayvalue</th>
+        <th class="text-center">circulaterate</th>
+        <th class="text-center">totalrate</th>
+        <th class="text-center">addnumber</th>
+        <th class="text-center">addvalue</th>
+        <th class="text-center">addvaluerate</th>
+        <th class="text-center">addvalueratecirculate</th>
+        <th class="text-center">addvalueratetotal</th>
+        <th class="text-center">trade</th>
+        <th class="text-center">date</th>
+
+    </tr>
+    </thead>
+</table>
+</body>
+
+<script type="text/javascript">
+    $(document).ready(function () {
+        $('#example').DataTable({
+            'ajax': 'http://127.0.0.1:8000/home/ShgtDf2021/', // json的url
+            'columns': [
+                {'data': 'code'},
+                {'data': 'name'},
+                {'data': 'todaycloseprice'},
+                {'data': 'todayup'},
+                {'data': 'todayquantity'},
+                {'data': 'todayvalue'},
+                {'data': 'circulaterate'},
+                {'data': 'totalrate'},
+                {'data': 'addnumber'},
+                {'data': 'addvalue'},
+                {'data': 'addvaluerate'},
+                {'data': 'addvalueratecirculate'},
+                {'data': 'addvalueratetotal'},
+                {'data': 'trade'},
+                {'data': 'date'},
+            ],
+
+        })
+    })
+</script>

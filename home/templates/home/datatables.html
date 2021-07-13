@@ -1,0 +1,54 @@
+<link rel="stylesheet" type="text/css" href="http://cdn.datatables.net/1.10.15/css/jquery.dataTables.css">
+ 
+<!-- jQuery -->
+<script type="text/javascript" charset="utf8" src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+ 
+<!-- DataTables -->
+<script type="text/javascript" charset="utf8" src="http://cdn.datatables.net/1.10.15/js/jquery.dataTables.js"></script>
+
+<!--第二步：添加如下 HTML 代码-->
+<table id="table_id_example" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Position</th>
+            <th>Office</th>
+            <th>Age</th>
+            <th>Start date</th>
+            <th>Salary</th>
+        </tr>
+    </thead>
+    <tbody>
+    <tr>
+        <td>Tiger Nixon</td>
+        <td>System Architect</td>
+        <td>Edinburgh</td>
+        <td>61</td>
+        <td>2011/04/25</td>
+        <td>$320,800</td>
+    </tr>
+    <tr>
+        <td>Garrett Winters</td>
+        <td>Accountant</td>
+        <td>Tokyo</td>
+        <td>63</td>
+        <td>2011/07/25</td>
+        <td>$170,750</td>
+    </tr>
+    <tr>
+        <td>Ashton Cox</td>
+        <td>Junior Technical Author</td>
+        <td>San Francisco</td>
+        <td>66</td>
+        <td>2009/01/12</td>
+        <td>$86,000</td>
+    </tr>
+    </tbody>
+</table>
+ 
+<!--第三步：初始化Datatables-->
+<script>
+$(document).ready( function () {
+    $('#table_id_example').DataTable(); // table_id_example是table样式的id
+} );
+ </script>
