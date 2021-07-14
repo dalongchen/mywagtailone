@@ -1,0 +1,87 @@
+<template>
+  <el-container>
+    <el-aside width="220px">
+      <el-row type="flex" class="row-bg" justify="start">
+        <el-col :span="6">
+          <div class="grid-content bg-purple"></div>
+            <DateTimeSon @func="getMsgSon"/>
+            <el-button round @click="get_date">公告利好</el-button>
+        </el-col>
+      </el-row>
+    </el-aside>
+    <el-main>
+      <ElTableSon :son_props="parent_data"/>
+    </el-main>
+  </el-container>
+  <div>   
+  </div>
+</template>
+
+<script lang="ts">
+import { defineComponent } from "vue";
+// import { defineComponent, reactive, watch, ref } from "vue";
+import ElTableSon from "@/components/ElTableSon.vue";
+import DateTimeSon from "@/components/DateTimeSon.vue";
+import axios from "axios";
+
+export default defineComponent({
+  name: "Stock",
+  components: {
+    ElTableSon,
+    DateTimeSon,
+  },
+  data() {
+    return {
+      parent_data:{},
+      msgSon:"",
+    };
+  },
+  methods: {
+    get_date() {
+      if (this.msgSon != ""){
+        if (this.msgSon != null){
+          //console.log(this.msgSon.toString());
+          this.msgSon = this.msgSon.toString()
+        }
+      }
+      axios
+        .get("http://127.0.0.1:8000/datatables/east_data/", {
+          params: { dc_notice: "dc_notice", d_t: this.msgSon}
+        })
+        .then(response => {
+          let r = response.data;
+          this.parent_data = { flag: "1", data: r.dc_notice_go}
+          //console.log(r.dc_notice_go);
+        })
+        .catch(error => {
+          console.log(error);
+        });
+    },
+    getMsgSon(d: string) {
+       this.msgSon = d;
+       //console.log("parent" + this.msgSon);
+    }
+  }
+  // setup() {
+  //     const selected = ref("");
+  //     const d = reactive({
+  //         dc_notice_go: {},
+  //     })
+  //     watch(selected, () => {
+  //         if (selected.value != ""){
+  //             //console.log(selected.value)
+  //             axios.get("http://127.0.0.1:8000/datatables/east_data/",{ params:{ "dc_notice": "dc_notice", "select": selected.value } }).then(response => {
+  //                 let r = response.data
+  //                 console.log(r)
+  //                 d.dc_notice_go = {"cap": "东财公告利好", "data": r.dc_notice_go , "tab_th":["日期", "时间", "类型", "标题"]}
+  //             }).catch(error => {
+  //                 console.log(error)
+  //             });
+  //         }
+  // 	});
+  //     return { d, selected }
+  // },
+});
+</script>
+<style scoped lang="scss">
+</style>
