@@ -1,6 +1,5 @@
-from mywagtailone.datatables.tool import mysetting
+import time
 
-print(mysetting.ZQ_URL)
-for u in mysetting.ZQ_URL:
-    print(u)
 
+if __name__ == "__main__":
+    print("今日的日期：" + time.strftime("%Y-%m-%d"))

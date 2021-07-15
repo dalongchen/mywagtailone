@@ -1,17 +1,19 @@
 from pprint import pprint
 from time import sleep
+import time
 import requests
 import json
 from datetime import date as d_date
 from datetime import datetime, timedelta
 from .. import views
+from ..tool import tools
 
 
 # 东财公告利好 vue stock
 def good_notice_parent(headers, start):
-    d = []
-    w = []
-    c = []
+    d = []  # 页面显示集合
+    w = []  # 存储最新日期资料
+    c = []  # 写入通达信
     url = "http://np-anotice-stock.eastmoney.com/api/security/ann?cb=&sr=-1&page_size=100&page_index={}&ann_type=A&client_source=web&f_node=1&s_node=0"
     dc_notice_go = dc_notice_good(headers, url, start[0], "业绩")
     d += dc_notice_go.get("lgt")
@@ -46,8 +48,24 @@ def dc_notice_good(headers, url, start, re):
     stock_code = []
     n = 0
     f = 0
+    ths_lis = []
+    if re == "业绩":
+        views.open_chrome()
+        li = []
+        for i in range(1, 30):
+            li.append(tools.time_increase(str(start)[0:10], i))
+        # print(li)
+        t = datetime.strptime(time.strftime("%Y-%m-%d"), "%Y-%m-%d")  # 今天
+        for ii in li:
+            ii = datetime.strptime(ii, "%Y-%m-%d")
+            if (t - ii).days < -1:
+                print("break date", ii)
+                break
+            ths_lis += views.ths_choice("预告日期为{}日；公告业绩预减或预亏".format(str(ii)[0:10]), t="2")
+            sleep(3)
+        print("ths_lis22", len(ths_lis))
     # 公告日，类型，标题
-    for i in range(1, 7):
+    for i in range(1, 8):
         if f == 1:
             print("break")
             break
@@ -68,11 +86,8 @@ def dc_notice_good(headers, url, start, re):
                     if i == 1:
                         if li[0].get("notice_date", ""):
                             new_date.append(li[0].get("notice_date", "") + li[0].get("title", "") + "\n")
-                            # new_date.append(li[0].get("title", ""))
                         else:
                             new_date.append(li[1].get("notice_date", "") + li[1].get("title", "") + "\n")
-                            # new_date.append(li[1].get("title", ""))
-
                     for v in li:
                         # print(v)
                         # v = ""
@@ -101,27 +116,18 @@ def dc_notice_good(headers, url, start, re):
                                 for cc in c:
                                     if cc.get("ann_type").find("A,") != -1:
                                         st = cc.get("stock_code", "")
+                                lg = {"notice_date": notice_date, "dis_time": dis_time, "col_type": col_type, "title": t}
                                 if re == "回购":
                                     if t.find("注销部分") == -1:
-                                        lg = {"notice_date": notice_date, "dis_time": dis_time, "col_type": col_type, "title": t}
                                         lgt.append(lg)
                                         stock_code.append(views.code_add(st + "\n"))
-                                        # if len(c) == 1:
-                                        #     stock_code.append(views.code_add(c[0].get("stock_code", "") + "\n"))
-                                        # elif len(c) == 2:
-                                        #     stock_code.append(views.code_add(c[1].get("stock_code", "") + "\n"))
-                                        # else:
-                                        #     print("有误", c)
+                                elif re == "业绩":
+                                    if st not in ths_lis:
+                                        lgt.append(lg)
+                                        stock_code.append(views.code_add(st + "\n"))
                                 else:
-                                    lg = {"notice_date": notice_date, "dis_time": dis_time, "col_type": col_type, "title": t}
                                     lgt.append(lg)
                                     stock_code.append(views.code_add(st + "\n"))
-                                    # if len(c) == 1:
-                                    #     stock_code.append(views.code_add(c[0].get("stock_code", "") + "\n"))
-                                    # elif len(c) == 2:
-                                    #     stock_code.append(views.code_add(c[1].get("stock_code", "") + "\n"))
-                                    # else:
-                                    #     print("有误", c)
     print(n, "条公告")
     return {"lgt": lgt, "new_date": new_date, "stock_code": stock_code}
 
