@@ -59,6 +59,11 @@ def index(request):
 
 
 def east_money_lgt(request):
+    # li = []
+    # for i in range(1, 8):
+    #     li.append(tools.time_increase('2019-06-28', i))
+    # print(li)
+    # tools.test_self()
     re_get = request.GET
     date = re_get.get("date", "")
     if re_get.get("ths_fund_inflow", "") == "ths_fund_inflow":
@@ -201,10 +206,10 @@ def east_money_lgt(request):
         ths_in = re_get.get("ths_in", "")
         print(ths_in)
         # date = "2021-04-28"
-        number = ths_choice(ths_in)
+        n = ths_choice(ths_in)
         # number = ""
         # print(number)
-        return JsonResponse({'number': number})
+        return JsonResponse({'number': len(n)})
 
     # 打开个股详情雪球,东财
     if re_get.get("open_stock_detail", "") == "open_stock_detail":
@@ -2198,7 +2203,7 @@ def ths_rise(date, up_rise):
 
 
 # 同花顺选股
-def ths_choice(ths_in):
+def ths_choice(ths_in, t="1"):
     cookie = get_cookie()
     headers = {
         "Cookie": "chat_bot_session_id=7bcebb62fb52a2de11bf41ec05073886; "
@@ -2227,13 +2232,16 @@ def ths_choice(ths_in):
         if lgt_data:
             lgt_list = []
             for item in lgt_data:
-                code = code_add(item.get('code', ''))
-                lgt_list.append(code + '\n')
+                if t == "1":
+                    lgt_list.append(code_add(item.get('code', '')) + '\n')
+                else:
+                    lgt_list.append(item.get('code', ''))
             # lgt_list = sorted(set(lgt_list), key=lgt_list.index)
             # print(lgt_list)
             # print(len(lgt_list))
-            is_write_stock('ths_choice.blk', lgt_list, "write")
-            return len(lgt_list)
+            if t == "1":
+                is_write_stock('ths_choice.blk', lgt_list, "write")
+            return lgt_list
     return ""
 
 
@@ -2428,7 +2436,6 @@ def pre_paid(dialog, stock_dict):
         sleep(0.5)
         dialog.window(best_match="重填[R]", auto_id="1007", class_name="Button", control_type="Button").click()
         sleep(0.5)
-
 
 
 # 查询收盘价。5.30后

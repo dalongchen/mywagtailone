@@ -1,6 +1,8 @@
 from baiduspider import BaiduSpider
 from pprint import pprint
 from time import sleep
+import time
+import datetime
 spider = BaiduSpider()
 
 
@@ -42,6 +44,15 @@ def bai_du(kw):
         return bai_d
     return
 
+
+# 日期自增
+def time_increase(begin_time, days):
+    ts = time.strptime(str(begin_time), "%Y-%m-%d")
+    ts = time.mktime(ts)
+    dateArray = datetime.datetime.utcfromtimestamp(ts)
+    date_increase = (dateArray + datetime.timedelta(days=days)).strftime("%Y-%m-%d")
+    # print("日期：{}".format(date_increase))
+    return date_increase
 
 
 
