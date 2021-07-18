@@ -158,7 +158,7 @@ def east_money_lgt(request):
                 dialog = log_on_ht()  # 登录海通
                 # dialog = "12"
                 if dialog:
-                    pre_paid(dialog, stock_dict)
+                    pre_paid(dialog, stock_dict, t="backstage")  # t="backstage"时从交易软件后台数据库添加
                 else:
                     print("股票软件出于安全考虑，无法频繁程序自动登录，请用手动登录交易系统")
                     return JsonResponse({'pre_paid': u"无法频繁程序自动登录，请用手动登录交易系统"})
@@ -2245,7 +2245,7 @@ def ths_choice(ths_in, t="1"):
     return ""
 
 
-# 显示choice板块个股
+# 显示choice板块个股,加雪球自选
 def read_choice(file, xue_qiu="xue_qiu"):
     stock_list = is_write_stock(file, "", "read")
     # print(stock_list)
@@ -2418,24 +2418,27 @@ def log_on_ht():
             return False
 
 
-# 预埋单
-def pre_paid(dialog, stock_dict):
+# 预埋单 t="interface"从交易界面输入，backstage从后台数据库输入
+def pre_paid(dialog, stock_dict, t="interface"):
     # print(dialog)
-    dialog.window(best_match="查询[F4]", auto_id="", class_name="", control_type="TreeItem").click_input(button='left', double=True)
-    sleep(1)
-    dialog.window(best_match="预设单", auto_id="", class_name="", control_type="TreeItem").set_focus()
-    for key, value in stock_dict.items():
-        # print(key + ':' + value)
-        dialog.window(best_match="", auto_id="1032", class_name="Edit", control_type="Edit").set_text(key)
-        sleep(0.5)
-        dialog.window(auto_id="1033", class_name="Edit", control_type="Edit").set_text(value)
-        sleep(0.5)
-        dialog.window(auto_id="1034", class_name="Edit", control_type="Edit").set_text("100")
-        sleep(0.5)
-        dialog.window(best_match="添加[A]", auto_id="1006", class_name="Button", control_type="Button").click()
-        sleep(0.5)
-        dialog.window(best_match="重填[R]", auto_id="1007", class_name="Button", control_type="Button").click()
-        sleep(0.5)
+    if t == "interface":
+        dialog.window(best_match="查询[F4]", auto_id="", class_name="", control_type="TreeItem").click_input(button='left', double=True)
+        sleep(1)
+        dialog.window(best_match="预设单", auto_id="", class_name="", control_type="TreeItem").set_focus()
+        for key, value in stock_dict.items():
+            # print(key + ':' + value)
+            dialog.window(best_match="", auto_id="1032", class_name="Edit", control_type="Edit").set_text(key)
+            sleep(0.5)
+            dialog.window(auto_id="1033", class_name="Edit", control_type="Edit").set_text(value)
+            sleep(0.5)
+            dialog.window(auto_id="1034", class_name="Edit", control_type="Edit").set_text("100")
+            sleep(0.5)
+            dialog.window(best_match="添加[A]", auto_id="1006", class_name="Button", control_type="Button").click()
+            sleep(0.5)
+            dialog.window(best_match="重填[R]", auto_id="1007", class_name="Button", control_type="Button").click()
+            sleep(0.5)
+    if t == "backstage":
+        pass
 
 
 # 查询收盘价。5.30后
