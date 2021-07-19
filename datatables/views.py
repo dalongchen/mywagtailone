@@ -1,4 +1,7 @@
 import os
+import sys
+# sys.path.insert(0, os.path.dirname(os.getcwd()))
+# print("rte", os.path.dirname(os.getcwd()))
 import re
 import time
 from time import sleep
@@ -59,11 +62,35 @@ def index(request):
 
 
 def east_money_lgt(request):
-    # li = []
-    # for i in range(1, 8):
-    #     li.append(tools.time_increase('2019-06-28', i))
-    # print(li)
-    # tools.test_self()
+    # sql = "SELECT * FROM ymd_1280194006 WHERE host_key like '%{}%';".format(wet)
+    # print(sql)
+    # d = [{'xd_2102': '000768', 'xd_2127': '26.3000', 'xd_2103': '中航西飞', 'xd_2106': '0280719034', 'xd_2108': '深圳Ａ股', 'xd_2109': '买入', 'xd_2126': '100', 'xd_2105': '', 'xd_3630': '0.0'}]
+    # with sqlite3.connect(is_not_path("data/ymddata.db", path_list=mysetting.JY_URL, flag="3")) as conn:
+    #     conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
+    #     cu = conn.cursor()
+    #     cu.execute("delete FROM ymd_1280194006")
+    #     for t in d:
+    #         cu.execute("INSERT INTO ymd_1280194006 (xd_2102,xd_2103,xd_2106,xd_2109,xd_2127,xd_2126,xd_2108,xd_2105,xd_3630) VALUES(?,?,?,?,?,?,?,?,?)",
+    #                    (
+    #                        t["xd_2102"],
+    #                        t["xd_2103"].encode(encoding='gbk'),
+    #                        t["xd_2106"],
+    #                        t["xd_2109"].encode(encoding='gbk'),
+    #                        t["xd_2127"],
+    #                        t["xd_2126"],
+    #                        t["xd_2108"].encode(encoding='gbk'),
+    #                        t["xd_2105"],
+    #                        t["xd_3630"],
+    #                     )
+    #                    )
+    #     data = cu.execute("SELECT * FROM ymd_1280194006").fetchall()
+    #     # print(len(data))
+    #     if data:
+    #         cookie_xq = ""
+    #         for result in data:
+    #             print(result)
+    #             if result:
+    #                 pass
     re_get = request.GET
     date = re_get.get("date", "")
     if re_get.get("ths_fund_inflow", "") == "ths_fund_inflow":
@@ -147,24 +174,27 @@ def east_money_lgt(request):
 
     # 预埋单
     if re_get.get("pre_paid", "no") == "pre_paid":
-        # 读取choice板块
-        stock_list = read_choice_code()
-        # print(stock_list)
+        # 读取choice板块买入
+        stock_list = read_choice_code("choice.blk")
         if len(stock_list):
+            stock_dict = inquiry_close(stock_list, date, f="2")  # f="2" 获取收盘价和名字
+        stock_sell = read_choice_code("choice_sell.blk")
+        if len(stock_sell):
+            stock_dict += inquiry_close(stock_sell, date, buy="卖出", f="2")  # f="2" 获取收盘价和名字
+        # print(stock_dict)
+        # stock_dict = ""
+        if len(stock_dict):
             # date = "2021-04-26"
-            stock_dict = inquiry_close(stock_list, date)  # 获取收盘价
-            # stock_dict = "23"
-            if stock_dict:
-                dialog = log_on_ht()  # 登录海通
-                # dialog = "12"
-                if dialog:
-                    pre_paid(dialog, stock_dict, t="backstage")  # t="backstage"时从交易软件后台数据库添加
-                else:
-                    print("股票软件出于安全考虑，无法频繁程序自动登录，请用手动登录交易系统")
-                    return JsonResponse({'pre_paid': u"无法频繁程序自动登录，请用手动登录交易系统"})
-                return JsonResponse({'pre_paid': u"成功"})
-            else:
-                return JsonResponse({'pre_paid': u"收盘价为空，检查是否交易日以及是否5.30后"})
+            # stock_dict = inquiry_close(stock_list, date)  # 获取收盘价
+            pre_paid(stock_dict, t="backstage")  # t="backstage"时从交易软件后台数据库添加
+            log_on_ht()  # 登录海通
+            # dialog = log_on_ht()  # 登录海通
+            # if dialog:
+            #     pre_paid(stock_dict, dialog=dialog)  # t="backstage"时从交易软件后台数据库添加
+            # else:
+            #     print("股票软件出于安全考虑，无法频繁程序自动登录，请用手动登录交易系统")
+            #     return JsonResponse({'pre_paid': u"无法频繁程序自动登录，请用手动登录交易系统"})
+            return JsonResponse({'pre_paid': u"成功"+str(len(stock_dict))})
         else:
             return JsonResponse({'pre_paid': u"失败"})
 
@@ -2094,16 +2124,6 @@ def ths_lgt(date):
 
 # 同花顺公告利好
 def ths_notice_good(date):
-        # headers = {
-        #     "Cookie": "PHPSESSID=4ea026e44bb06c30e0a0dafdf5e0dfd1;"
-        #               " other_uid=Ths_iwencai_Xuangu_9j2forruvxyo7a62uswxpyk2j2z2su4r; "
-        #               "cid=3334c28eb211f54e6885d80b6b2f051a1609357041; user_status=0; "
-        #               "Hm_lvt_78c58f01938e4d85eaf619eae71b4ed1=1615319471; cid=3334c28eb211f54e6885d80b6b2f051a1609357041; "
-        #               "ComputerID=3334c28eb211f54e6885d80b6b2f051a1609357041; "
-        #               "WafStatus=0; Hm_lpvt_78c58f01938e4d85eaf619eae71b4ed1=1617115747; "
-        #               "v=Ay5saZkGwpCONjZ0Mqb1trZ8f4_jL_NiBPKmDVj3m4zsLMA7wL9COdSD9hMr",
-        #     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36"
-        # }
         cookie = get_cookie()
         headers = {
             "Cookie": "chat_bot_session_id=7bcebb62fb52a2de11bf41ec05073886; "
@@ -2147,16 +2167,6 @@ def ths_notice_good(date):
 
 # 同花顺涨停或大于5
 def ths_rise(date, up_rise):
-        # headers = {
-        #     "Cookie": "PHPSESSID=4ea026e44bb06c30e0a0dafdf5e0dfd1;"
-        #               " other_uid=Ths_iwencai_Xuangu_9j2forruvxyo7a62uswxpyk2j2z2su4r; "
-        #               "cid=3334c28eb211f54e6885d80b6b2f051a1609357041; user_status=0; "
-        #               "Hm_lvt_78c58f01938e4d85eaf619eae71b4ed1=1615319471; cid=3334c28eb211f54e6885d80b6b2f051a1609357041; "
-        #               "ComputerID=3334c28eb211f54e6885d80b6b2f051a1609357041; "
-        #               "WafStatus=0; Hm_lpvt_78c58f01938e4d85eaf619eae71b4ed1=1617115747; "
-        #               "v=Ay5saZkGwpCONjZ0Mqb1trZ8f4_jL_NiBPKmDVj3m4zsLMA7wL9COdSD9hMr",
-        #     "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36"
-        # }
         cookie = get_cookie()
         headers = {
             "Cookie": "chat_bot_session_id=7bcebb62fb52a2de11bf41ec05073886; "
@@ -2419,7 +2429,7 @@ def log_on_ht():
 
 
 # 预埋单 t="interface"从交易界面输入，backstage从后台数据库输入
-def pre_paid(dialog, stock_dict, t="interface"):
+def pre_paid(stock_dict, dialog="", t="interface"):
     # print(dialog)
     if t == "interface":
         dialog.window(best_match="查询[F4]", auto_id="", class_name="", control_type="TreeItem").click_input(button='left', double=True)
@@ -2438,38 +2448,125 @@ def pre_paid(dialog, stock_dict, t="interface"):
             dialog.window(best_match="重填[R]", auto_id="1007", class_name="Button", control_type="Button").click()
             sleep(0.5)
     if t == "backstage":
-        pass
+        with sqlite3.connect(is_not_path("data/ymddata.db", path_list=mysetting.JY_URL, flag="3")) as conn:
+            conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
+            cu = conn.cursor()
+            cu.execute("delete FROM ymd_1280194006")
+            for t in stock_dict:
+                cu.execute(
+                    "INSERT INTO ymd_1280194006 (xd_2102,xd_2103,xd_2106,xd_2109,xd_2127,xd_2126,xd_2108,xd_2105,xd_3630) VALUES(?,?,?,?,?,?,?,?,?)",
+                    (
+                        t["xd_2102"],
+                        t["xd_2103"].encode(encoding='gbk'),
+                        t["xd_2106"],
+                        t["xd_2109"].encode(encoding='gbk'),
+                        t["xd_2127"],
+                        t["xd_2126"],
+                        t["xd_2108"].encode(encoding='gbk'),
+                        t["xd_2105"],
+                        t["xd_3630"],
+                    )
+                    )
+            # data = cu.execute("SELECT * FROM ymd_1280194006").fetchall()
+            # # print(len(data))
+            # if data:
+            #     cookie_xq = ""
+            #     for result in data:
+            #         print(result)
+            #         if result:
+            #             pass
 
 
-# 查询收盘价。5.30后
-def inquiry_close(stock_list, date):
+# 查询收盘价。5.30后  f == "2"查询收盘价和名字
+def inquiry_close(stock_list, date, buy="买入", f="1"):
     # 登陆系统
     lg = bs.login()
     # 显示登陆返回信息
     # print('login respond error_code:' + lg.error_code)
-    stock_dict = {}
-    if lg.error_code == "0":
-        for item in stock_list:
-            # print(item)
-            rs = bs.query_history_k_data_plus(item, "close,", start_date=date, end_date=date,
-                                              frequency="d", adjustflag="3")
-            # print('query_history_k_data_plus respond error_code:' + rs.error_code)
-            while (rs.error_code == '0') & rs.next():
-                # 获取一条记录，将记录合并在一起
-                result = rs.get_row_data()
-                # print(result)
-                if len(result):
-                    if result[0] != "":
-                        stock_dict[item[3:]] = result[0]
-                        # print(result[0])
+    if f == "1":
+        stock_dict = {}
+        if lg.error_code == "0":
+            for item in stock_list:
+                # print(item)
+                rs = bs.query_history_k_data_plus(item, "close,", start_date=date, end_date=date,
+                                                  frequency="d", adjustflag="3")
+                # print('query_history_k_data_plus respond error_code:' + rs.error_code)
+                while (rs.error_code == '0') & rs.next():
+                    # 获取一条记录，将记录合并在一起
+                    result = rs.get_row_data()
+                    # print(result)
+                    if len(result):
+                        if result[0] != "":
+                            stock_dict[item[3:]] = result[0]
+                            # print(result[0])
+                        else:
+                            print("有误，空", item)
                     else:
-                        print("有误，空")
+                        print("有误", item)
+        # 登出系统
+        bs.logout()
+        print(stock_dict)
+        return stock_dict
+    if f == "2":
+        stock = []
+        if lg.error_code == "0":
+            for item in stock_list:
+                if item.startswith("sz"):
+                    xd_2106 = mysetting.HOLDER_CODE[0][0]
+                    xd_2108 = mysetting.HOLDER_CODE[0][1]
+                elif item.startswith("sh"):
+                    xd_2106 = mysetting.HOLDER_CODE[1][0]
+                    xd_2108 = mysetting.HOLDER_CODE[1][1]
                 else:
-                    print("有误")
-    # 登出系统
-    bs.logout()
-    print(stock_dict)
-    return stock_dict
+                    print(item, "error")
+                    xd_2106 = ""
+                st = {}
+                # print(item)
+                rs = bs.query_history_k_data_plus(item, "close,", start_date=date, end_date=date,
+                                                  frequency="d", adjustflag="3")
+                # print('query_history_k_data_plus respond error_code:' + rs.error_code)
+                while (rs.error_code == '0') & rs.next():
+                    # 获取一条记录，将记录合并在一起
+                    result = rs.get_row_data()
+                    # print(result)
+                    if len(result):
+                        # print(result[0])
+                        if result[0] != "":
+                            st["xd_2102"] = item[3:]
+                            st["xd_2127"] = result[0]
+                        else:
+                            print("有误，空", item)
+                    else:
+                        print("有误", item)
+
+                # 获取证券基本资料
+                res = bs.query_stock_basic(code=item)
+                while (res.error_code == '0') & res.next():
+                    # 获取一条记录，将记录合并在一起
+                    result = res.get_row_data()
+                    # print(result)
+                    # print(result[1])
+                    if len(result):
+                        if result[1] != "":
+                            if xd_2106 != "":
+                                st["xd_2103"] = result[1]
+                                st["xd_2106"] = xd_2106
+                                st["xd_2108"] = xd_2108
+                                st["xd_2109"] = buy
+                                st["xd_2126"] = "100"
+                                st["xd_2105"] = ""
+                                st["xd_3630"] = "0.000000"
+                        else:
+                            print("有误，空", item)
+                    else:
+                        print("有误", item)
+
+                if len(st) == 9:
+                    stock.append(st)
+        # 登出系统
+        bs.logout()
+        # print(stock)
+        return stock
 
 driver = ""
 
@@ -2524,8 +2621,8 @@ def add_linefeed(data):
 
 
 # 读取choice板块，获取code
-def read_choice_code():
-    stock_list = read_file("choice.blk")
+def read_choice_code(file):
+    stock_list = read_file(file)
     # print(stock_list)
     if len(stock_list):
         for i, value in enumerate(stock_list):
@@ -2731,7 +2828,7 @@ def is_write_stock(file, data, is_write):
 
 
 # 判断路径是否存在
-def is_not_path(file, flag="1"):
+def is_not_path(file, path_list="", flag="1"):
     if flag == "1":
         for u in mysetting.ZQ_URL:
             if os.access(u + file, os.F_OK):
@@ -2744,6 +2841,11 @@ def is_not_path(file, flag="1"):
             path = r"D:\mysoft\chrome\Application\chrome.exe"
             # path = r"C:\Users\Administrator\AppData\Local\Google\Chrome\Application\chrome.exe"
         return path
+    elif flag == "3":
+        for u in path_list:
+            if os.access(u + file, os.F_OK):
+                # print(u + file)
+                return u + file
 
 
 def index_django(request):
@@ -2860,7 +2962,8 @@ def my_custom_sql(request):
             result = key in search
             # print(result)
             if result:
-                i = i + 1
+                i += 1
+                # i = i + 1
                 # print(i)
                 field_value = field_list.get(key, "no")  # 获取code
                 # print(field_value not in field_no_list)
