@@ -2396,6 +2396,7 @@ def log_on_ht():
         if ap.exists():
             # ap.children()[1].draw_outline(colour='red', thickness=5)
             # pass
+            sleep(1)
             ap.children()[1].type_keys("282766")
             sleep(2)
             ap.children()[2].type_keys("282766")
