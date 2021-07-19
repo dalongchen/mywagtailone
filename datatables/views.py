@@ -2296,9 +2296,10 @@ def read_choice(file, xue_qiu="xue_qiu"):
         # return ""
 
 
-# 读choice写自选和海通自选
+# 读choice写自选
 def write_self_hai_tong():
     choice = read_file("choice.blk")
+    choice += read_file("choice_sell.blk")
     zxg = read_file("ZXG.blk")
     # 备份安信自选
     if zxg:
