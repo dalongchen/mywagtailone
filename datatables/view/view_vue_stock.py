@@ -9,7 +9,7 @@ from .. import views
 from ..tool import tools
 
 
-# 东财公告利好 vue stock
+# 东财公告利好 vue stock    此文件是vue为前端的功能
 def good_notice_parent(headers, start):
     d = []  # 页面显示集合
     w = []  # 存储最新日期资料

@@ -61,36 +61,9 @@ def index(request):
     # return render(request, 'datatables/index.html', context)
 
 
+# 各种选股
 def east_money_lgt(request):
-    # sql = "SELECT * FROM ymd_1280194006 WHERE host_key like '%{}%';".format(wet)
-    # print(sql)
-    # d = [{'xd_2102': '000768', 'xd_2127': '26.3000', 'xd_2103': '中航西飞', 'xd_2106': '0280719034', 'xd_2108': '深圳Ａ股', 'xd_2109': '买入', 'xd_2126': '100', 'xd_2105': '', 'xd_3630': '0.0'}]
-    # with sqlite3.connect(is_not_path("data/ymddata.db", path_list=mysetting.JY_URL, flag="3")) as conn:
-    #     conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
-    #     cu = conn.cursor()
-    #     cu.execute("delete FROM ymd_1280194006")
-    #     for t in d:
-    #         cu.execute("INSERT INTO ymd_1280194006 (xd_2102,xd_2103,xd_2106,xd_2109,xd_2127,xd_2126,xd_2108,xd_2105,xd_3630) VALUES(?,?,?,?,?,?,?,?,?)",
-    #                    (
-    #                        t["xd_2102"],
-    #                        t["xd_2103"].encode(encoding='gbk'),
-    #                        t["xd_2106"],
-    #                        t["xd_2109"].encode(encoding='gbk'),
-    #                        t["xd_2127"],
-    #                        t["xd_2126"],
-    #                        t["xd_2108"].encode(encoding='gbk'),
-    #                        t["xd_2105"],
-    #                        t["xd_3630"],
-    #                     )
-    #                    )
-    #     data = cu.execute("SELECT * FROM ymd_1280194006").fetchall()
-    #     # print(len(data))
-    #     if data:
-    #         cookie_xq = ""
-    #         for result in data:
-    #             print(result)
-    #             if result:
-    #                 pass
+
     re_get = request.GET
     date = re_get.get("date", "")
     if re_get.get("ths_fund_inflow", "") == "ths_fund_inflow":
@@ -296,11 +269,12 @@ def east_money_lgt(request):
 xq_dis = 0
 
 
-# 股票详情
+# 单个股票详情 vue为前端和传统前端页面都是调这里函数
 def stock_details(request):
     global xq_dis
     re_get = request.GET
     st = re_get.get("st", "")
+    # tail页面没有股票代码时去获取choice板块代码
     if st == "":
         stock_li = read_choice("choice.blk", xue_qiu="")
         # print(stock_li)
@@ -309,11 +283,14 @@ def stock_details(request):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.67 Safari/537.36',
     }
-    ss = ""
+    ss = ""  # 做调试时用
     if ss == "":
-        sina = sina_real_time(number)  # 新浪实时
+        # sina = sina_real_time(number)  # 新浪实时
+        finance = stock_finance(number, headers)  # 财务指标
+        # print(finance)
         d = {
-            "sina": [sina],
+            # "sina": [sina],
+            "finance": finance,
         }
     else:
         sina = sina_real_time(number)  # 新浪实时
@@ -467,7 +444,7 @@ def sina_real_time(code):  # 日期，时间 名字，现价，成交量，成�
     return ""
 
 
-# 财务指标 http://f10.eastmoney.com/f10_v2/FinanceAnalysis.aspx?code=SZ000785
+# 财务指标 http://f10.eastmoney.com/f10_v2/FinanceAnalysis.aspx?code=SZ000785  # 这个应该是表格的90度翻转
 def stock_finance(code, headers):
     code = add_sh(code, big="big")
     # print(code)
@@ -821,7 +798,7 @@ def stock_finance(code, headers):
                         receivable_rate
                     ]
                     lgt.append(lg)
-            return list(map(list, zip(*lgt)))
+            return list(map(list, zip(*lgt)))  # 这个应该是表格的90度翻转
     return ""
 
 

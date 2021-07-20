@@ -11,7 +11,8 @@
       >{{ ite }}</el-row>
     </el-aside>
     <el-main>
-      <el-row><ElTableSon :son_props="d.sina"/></el-row>
+      <el-row><ElTableSon :son_props="d.sina"/>{{ d.sina.f }}</el-row>
+      <el-row><ElTableSon :son_props="d.finance"/>{{ d.finance.f }}</el-row>
     </el-main>
   </el-container>
 </template>
@@ -28,7 +29,8 @@ export default defineComponent({
   },
   setup() {
     const d = reactive({
-      sina: {}
+      sina: {},
+      finance: {},
     });
     const lis = ref();
     axios
@@ -47,20 +49,36 @@ export default defineComponent({
         })
         .then(response => {
           let r = response.data;
-          //console.log(r.st_notice)
+          // console.log(typeof(r.sina)=="undefined")
           /*                */
-          d.sina = {
-            flag: "2",
-            data: r.sina,
-            th: [
-              {prop: "0", propName: "日期"},
-              {prop: "1", propName: "时间"},
-              {prop: "2", propName: "名称"},
-              {prop: "3", propName: "现价"},
-              {prop: "4", propName: "成交量"},
-              {prop: "5", propName: "成交额"},
-            ]
-          };
+          if (typeof(r.sina) != "undefined" && r.sina != null && r.sian != "") {
+              d.sina = {
+                flag: "2",
+                data: r.sina,
+                th: [
+                  {prop: "0", propName: "日期"},
+                  {prop: "1", propName: "时间"},
+                  {prop: "2", propName: "名称"},
+                  {prop: "3", propName: "现价"},
+                  {prop: "4", propName: "成交量"},
+                  {prop: "5", propName: "成交额"},
+                ]
+              };
+          }else{
+            d.sina = {
+                f: "新浪行情为空",
+            };
+          } 
+          if (typeof(r.finance) != "undefined" && r.finance != null && r.finance != "") {
+            d.finance = {
+              flag: "3",
+              data: r.finance,
+            };
+          }else{
+            d.finance = {
+                f: "财务数据为空",
+            };
+          } 
         })
         .catch(error => {
           console.log(error);
