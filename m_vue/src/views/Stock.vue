@@ -19,7 +19,6 @@
 
 <script lang="ts">
 import { defineComponent } from "vue";
-// import { defineComponent, reactive, watch, ref } from "vue";
 import ElTableSon from "@/components/ElTableSon.vue";
 import DateTimeSon from "@/components/DateTimeSon.vue";
 import axios from "axios";
@@ -62,25 +61,7 @@ export default defineComponent({
        //console.log("parent" + this.msgSon);
     }
   }
-  // setup() {
-  //     const selected = ref("");
-  //     const d = reactive({
-  //         dc_notice_go: {},
-  //     })
-  //     watch(selected, () => {
-  //         if (selected.value != ""){
-  //             //console.log(selected.value)
-  //             axios.get("http://127.0.0.1:8000/datatables/east_data/",{ params:{ "dc_notice": "dc_notice", "select": selected.value } }).then(response => {
-  //                 let r = response.data
-  //                 console.log(r)
-  //                 d.dc_notice_go = {"cap": "东财公告利好", "data": r.dc_notice_go , "tab_th":["日期", "时间", "类型", "标题"]}
-  //             }).catch(error => {
-  //                 console.log(error)
-  //             });
-  //         }
-  // 	});
-  //     return { d, selected }
-  // },
+  
 });
 </script>
 <style scoped lang="scss">
