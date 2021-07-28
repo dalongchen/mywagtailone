@@ -12,16 +12,16 @@
       <el-table-column prop="title" label="标题"></el-table-column>  
     </el-table>
   </div>
-  <!-- flag === '2'为列标题传入的公用表,data数据为列表list  -->
+  <!-- flag === '2'为列标题传入的公用表,data数据为2维列表list 列表字典  -->
   <div v-else-if="son_props.flag === '2'">
-    <el-tag type="info">标签三</el-tag>
+    <el-tag type="success" class="tag_right">{{son_props.caption}}</el-tag>
     <el-table
       :data="son_props.data"
       style="width: 100%"
       empty-text="null"
     >
       <el-table-column
-          width="180" 
+          :width="son_props.width" 
           v-for=" i in son_props.th"
           :key="i.id"
           :property="i.prop"
@@ -29,31 +29,117 @@
       </el-table-column> 
     </el-table>
   </div>
-  <!-- flag === '3'为不需要表头,表头已经在data数据列表list里面传入  -->
+  <!-- flag === '3'为不需要表头,data为二维数组  -->
   <div v-else-if="son_props.flag === '3'">
-    <el-tag type="info">标签三2</el-tag>
+    <el-tag type="success" class="tag_right">{{son_props.caption}}</el-tag>
     <el-table
       :data="son_props.data"
       style="width: 100%"
       empty-text="null"
-      show-header=false
+      :show-header="false"
     >
       <el-table-column
-          width="100">
+      v-for=" i in son_props.th"
+      :key="i.id"
+      :property="i.prop"
+      :show-overflow-tooltip="i.t"
+      :width="i.width" >
       </el-table-column>
     </el-table>
+  </div>
+  <!-- flag === '30'为不需要表头,data为二维数组 带点击 -->
+  <div v-else-if="son_props.flag === '30'">
+    <el-tag type="success" class="tag_right">{{son_props.caption}}</el-tag>
+    <el-table
+      :data="son_props.data"
+      style="width: 100%"
+      empty-text="null"
+      :show-header="false"
+      @cell-click="handle"
+    >
+      <el-table-column
+      v-for=" i in son_props.th"
+      :key="i.id"
+      :property="i.prop"
+      :show-overflow-tooltip="i.t"
+      :width="i.width" >
+      </el-table-column>
+    </el-table>
+  </div>
+  <!-- flag === '4'循环表 字典的data -->
+  <div v-else-if="son_props.flag === '4'">
+    <div v-for=" i in son_props.data" :key="i.id">
+      <el-tag type="success" class="tag_right">{{i.rq + son_props.caption}}</el-tag>
+      <el-table
+        :data="i.sdgd"
+        style="width: 100%"
+        empty-text="null"
+        :show-header="false"
+      >
+        <el-table-column
+        v-for=" i in son_props.th"
+        :key="i.id"
+        :property="i.prop"
+        :width="i.width" >
+        </el-table-column>
+      </el-table>
+    </div>
+  </div>
+  <!-- flag === '5'循环表 列表的data -->
+  <div v-else-if="son_props.flag === '5'">
+    <div v-for=" i in son_props.data" :key="i.id">
+      <el-tag type="success" class="tag_right">{{son_props.caption}}</el-tag>
+      <el-table
+        :data="i"
+        style="width: 100%"
+        empty-text="null"
+        :show-header="false"
+      >
+        <el-table-column
+        v-for=" i in son_props.th"
+        :key="i.id"
+        :property="i.prop"
+        :width="i.width" >
+        </el-table-column>
+      </el-table>
+    </div>
   </div>
 </div>
 </template>
  
-<script lang="ts">
+<script lang="">
 import { defineComponent } from "vue";
 
 export default defineComponent({
   name: "ElTableSon",
   props: {
-    son_props: {},
+    son_props:Object,
   },
-  
+  data() {
+    return {
+      // a,
+      // a:[
+      //             "0",
+      //             "1",
+      //             "2",
+      //           ]
+    } 
+  },
+  computed: {
+    pu() {
+      return Array.from(Array(this.son_props.data[0].length), (v,k) =>k +"")
+    }
+  },
+  methods: {
+    handle(row){
+      console.log(row["4"].startsWith('http'))
+      if (row["4"].startsWith('http')) {
+        window.open(row["4"])
+      }
+    }
+  },
 });
 </script>
+<style lang="scss">
+.tag_right{float:left;width:300px} 
+</style>

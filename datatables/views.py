@@ -269,9 +269,9 @@ def east_money_lgt(request):
 xq_dis = 0
 
 
-# 单个股票详情 vue为前端和传统前端页面都是调这里函数
+# 单个股票详情 vue为前端
 def stock_details(request):
-    global xq_dis
+    global xq_dis  # 雪球讨论取不到是把其置为1，再取一次
     re_get = request.GET
     st = re_get.get("st", "")
     # tail页面没有股票代码时去获取choice板块代码
@@ -283,73 +283,82 @@ def stock_details(request):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.67 Safari/537.36',
     }
-    ss = ""  # 做调试时用
-    if ss == "":
-        # sina = sina_real_time(number)  # 新浪实时
-        finance = stock_finance(number, headers)  # 财务指标
-        # print(finance)
-        d = {
-            # "sina": [sina],
-            "finance": finance,
-        }
-    else:
-        sina = sina_real_time(number)  # 新浪实时
-        finance = stock_finance(number, headers)  # 财务指标
-        sleep(1.1)
-        st_ach = stock_achievement(number, headers)  # 业绩
-        sleep(1)
-        per_for = performance_forecast(number, headers)  # 业绩预告
-        sleep(1.5)
-        ins_pos = institution_position(number, headers)  # 机构持仓 股东 解禁
-        sleep(1.05)
-        lgt = east_lgt_detail(number, headers)  # 陆股通
-        sleep(1.2)
-        # #lift_ban = east_lift_ban(number)  # 东财解禁详细
-        # #sleep(0.5)
-        add_subtract = east_add_subtract(number, headers)  # 股东减持
-        sleep(1.1)
-        manager_a = manager_add(number, headers)  # 高管减持
-        sleep(1.8)
-        rz = east_rz(number, headers)  # 融资
-        sleep(1.)
-        capital_inflow = east_zllr(number, headers)  # 资金流入
-        sleep(1.6)
-        institution_res = institution_research(number, headers)  # 机构调研
-        sleep(1.3)
-        share_num = shareholder_number(number, headers)  # 股东户数
-        sleep(1.)
-        dragon_tiger = per_dragon_tiger(number, headers)  # 龙虎榜
-        sleep(1.19)
-        ins_re_re = ins_research_report(number, headers)  # 机构研究报告
+    sina = [sina_real_time(number)]  # 新浪实时
+    # sina = ""
+    finance = stock_finance(number, headers)  # 财务指标
+    # finance = ""
+    sleep(1.1)
+    st_ach = stock_achievement(number, headers)  # 业绩
+    # st_ach = ""
+    sleep(1)
+    per_for = performance_forecast(number, headers)  # 业绩预告
+    # per_for = ""
+    sleep(1.5)
+    ins_pos = institution_position(number, headers)  # 机构持仓 股东 解禁
+    # ins_pos = ""
+    sleep(1.05)
+    lgt = east_lgt_detail(number, headers)  # 陆股通
+    # lgt = ""
+    sleep(1.2)
+    # lift_ban = east_lift_ban(number)  # 东财解禁详细 暂时丢弃
+    # sleep(0.5)
+    add_subtract = east_add_subtract(number, headers)  # 股东减持
+    # add_subtract = ""
+    sleep(1.1)
+    manager_a = manager_add(number, headers)  # 高管减持
+    # manager_a = ""
+    sleep(1.8)
+    rz = east_rz(number, headers)  # 融资
+    # rz = ""
+    sleep(1.)
+    capital_inflow = east_zllr(number, headers)  # 资金流入
+    # capital_inflow = ""
+    sleep(1.6)
+    institution_res = institution_research(number, headers)  # 机构调研
+    # institution_res = ""
+    sleep(1.3)
+    share_num = shareholder_number(number, headers)  # 股东户数
+    # share_num = ""
+    sleep(1.)
+    dragon_tiger = per_dragon_tiger(number, headers)  # 龙虎榜
+    # dragon_tiger = ""
+    sleep(1.19)
+    ins_re_re = ins_research_report(number, headers)  # 机构研究报告
+    # ins_re_re = ""
+    xq_discuss = xiu_qiu_discuss(number)  # 雪球讨论
+    # xq_discuss = ""
+    # print("jdjd", xq_dis == 1)
+    sleep(1.1)
+    if xq_dis == 1:  # 为1时打开浏览器，读cookie，再来一次
         xq_discuss = xiu_qiu_discuss(number)  # 雪球讨论
-        print("jdjd", xq_dis == 1)
-        sleep(1.1)
-        if xq_dis == 1:
-            xq_discuss = xiu_qiu_discuss(number)  # 雪球讨论
-        xq_new = xiu_qiu_new(number)  # 雪球资信
-        bai = tools.bai_du(re.sub("\d", "", st) + '负面')
-        st_notice = stock_notice(number, headers)  # 个股公告
-        d = {
-            "sina": [sina],
-            "finance": finance,
-            "st_ach": st_ach,
-            "per_for": per_for,
-            "ins_pos": ins_pos,
-            "lgt": lgt,
-            # #"lift_ban": lift_ban,
-            "add_subtract": add_subtract,
-            "manager_a": manager_a,
-            "rz": rz,
-            "capital_inflow": capital_inflow,
-            "institution_res": institution_res,
-            "share_num": share_num,
-            "dragon_tiger": dragon_tiger,
-            "ins_re_re": ins_re_re,
-            "xq_discuss": xq_discuss,
-            "xq_new": xq_new,
-            "bai": bai,
-            "st_notice": st_notice,
-        }
+        # xq_discuss = ""
+    xq_new = xiu_qiu_new(number)  # 雪球资信
+    # xq_new = ""
+    bai = tools.bai_du(re.sub("\d", "", st) + '负面')
+    # bai = ""
+    st_notice = stock_notice(number, headers)  # 个股公告
+    # st_notice = ""
+    d = {
+        "sina": sina,
+        "finance": finance,
+        "st_ach": st_ach,
+        "per_for": per_for,
+        "ins_pos": ins_pos,
+        "lgt": lgt,
+        # #"lift_ban": lift_ban,
+        "add_subtract": add_subtract,
+        "manager_a": manager_a,
+        "rz": rz,
+        "capital_inflow": capital_inflow,
+        "institution_res": institution_res,
+        "share_num": share_num,
+        "dragon_tiger": dragon_tiger,
+        "ins_re_re": ins_re_re,
+        "xq_discuss": xq_discuss,
+        "xq_new": xq_new,
+        "bai": bai,
+        "st_notice": st_notice,
+    }
     return HttpResponse(json.dumps(d))
 
 
@@ -427,7 +436,7 @@ def sina_real_time(code):  # 日期，时间 名字，现价，成交量，成�
     text = vv.text
     if vv.status_code == 200 and text:
         detail = text.split("\"")[1].split(",")
-        print(detail)
+        # print(detail)
         if detail[8]:
             detail[8] = '{:.2f}亿'.format(float(detail[8]) / 100000000)
         if detail[9]:
@@ -817,8 +826,26 @@ def stock_achievement(code, headers):
         if detail:
             dd = detail.get("data", "")
             if dd:
-                lgt = []
-                # 公告日，截至，收益，扣非，营收，同比，环比，利润，同比，环比，净资产，收益率，现金流，毛利，分配
+                d = [
+                    '公告日',
+                    '截至',
+                    '收益',
+                    '扣非',
+                    '营收',
+                    '同比',
+                    '环比',
+                    '利润',
+                    '同比',
+                    '环比',
+
+                    '净资产',
+                    '收益率',
+                    '现金流',
+                    '毛利',
+                    '分配',
+                ]
+                lgt = [d]
+                # 公告日，截至，收益(元)，扣非(元)，营收，同比%，环比%，利润，同比%，环比%，净资产(元)，收益率%，现金流，毛利%，分配
                 for v in dd:
                     # print(v)
                     # v = ""
@@ -852,6 +879,8 @@ def stock_achievement(code, headers):
                             in_q_on_q = '{:.2f}'.format(in_q_on_q)
                         if profit:
                             profit = '{:.2f}亿'.format(profit/100000000)
+                        if p_y_one_y:
+                            p_y_one_y = '{:.2f}'.format(p_y_one_y)
                         if p_q_on_q:
                             p_q_on_q = '{:.2f}'.format(p_q_on_q)
                         if asset:
@@ -861,26 +890,11 @@ def stock_achievement(code, headers):
                         if gross_pro:
                             gross_pro = '{:.2f}'.format(gross_pro)
                         # print(income)
-                        lg = {
-                            "notice": notice,
-                            "report": report,
-                            "base": base,
-                            "deduct": deduct,
-                            "income": income,
-                            "in_y_one_y": in_y_one_y,
-                            "in_q_on_q": in_q_on_q,
-                            "profit": profit,
-                            "p_y_one_y": p_y_one_y,
-                            "p_q_on_q": p_q_on_q,
-                            "asset": asset,
-                            "roe": roe,
-                            "cash_flow": cash_flow,
-                            "gross_pro": gross_pro,
-                            "assign": assign,
-                        }
+                        lg = [notice, report, base, deduct, income, in_y_one_y, in_q_on_q, profit,
+                              p_y_one_y, p_q_on_q, asset, roe, cash_flow, gross_pro, assign]
                         lgt.append(lg)
                 # print(code, lgt)
-                return lgt
+                return list(map(list, zip(*lgt)))
     print(code, "无业绩")
     return ""
 
@@ -899,7 +913,16 @@ def performance_forecast(code, headers):
         if detail:
             dd = detail.get("data", "")
             if dd:
-                lgt = []
+                lgt = [[
+                    '公告日',
+                    '截至',
+                    '指标',
+                    '预告类型',
+                    '预测值',
+                    '幅度',
+                    '业绩',
+                    '原因',
+                ]]
                 # 公告日，截至，指标，预告类型,预测值，幅度，业绩，原因
                 for v in dd:
                     # print(v)
@@ -925,33 +948,43 @@ def performance_forecast(code, headers):
                                 break
                         if report:
                             report = report[0:10]
-                        # print(report)
+                        # print("11q", profit_low)
                         if profit_low:
                             if fin_type == "每股收益":
-                                profit_low = '{:.2f}'.format(profit_low)
+                                profit_low = '{:.2f}元'.format(profit_low)
                             else:
-                                profit_low = '{:.2f}'.format(profit_low/100000000)
+                                profit_low = '{:.2f}亿'.format(profit_low/100000000)
+                        else:
+                            profit_low = ""
                         if profit_up:
                             if fin_type == "每股收益":
-                                profit_up = '{:.2f}'.format(profit_up)
+                                profit_up = '{:.2f}元'.format(profit_up)
                             else:
-                                profit_up = '{:.2f}'.format(profit_up/100000000)
+                                profit_up = '{:.2f}亿'.format(profit_up/100000000)
+                        else:
+                            profit_up = ""
                         if mg_low:
                             mg_low = '{:.2f}%'.format(mg_low)
+                        else:
+                            mg_low = ""
                         if mg_up:
                             mg_up = '{:.2f}%'.format(mg_up)
-                        lg = {
-                            "notice": notice,
-                            "report": report,
-                            "fin_type": fin_type,
-                            "ty": ty,
-                            "profit_low": profit_low,
-                            "profit_up": profit_up,
-                            "mg_low": mg_low,
-                            "mg_up": mg_up,
-                            "content": content,
-                            "reason": reason
-                        }
+                        else:
+                            mg_up = ""
+                        # lg = {
+                        #     "notice": notice,
+                        #     "report": report,
+                        #     "fin_type": fin_type,
+                        #     "ty": ty,
+                        #     "profit_low": profit_low,
+                        #     "profit_up": profit_up,
+                        #     "mg_low": mg_low,
+                        #     "mg_up": mg_up,
+                        #     "content": content,
+                        #     "reason": reason
+                        # }
+                        lg = [notice, report, fin_type, ty, profit_low + "-" + profit_up,
+                              mg_low + "-" + mg_up, content, reason]
                         lgt.append(lg)
                 return lgt
     return ""
@@ -982,102 +1015,146 @@ def institution_position(code, headers):
 
 # 十大股东
 def ten_big_share(detail_f):
-    ten_share = detail_f.get("sdgd", "")
-    # pprint(ten_share)
+    ten_share1 = detail_f.get("sdgd", "")
+    # print(ten_share1)
     # ten_share = ""
-    if ten_share:
-        k = 0
-        for i in ten_share:
+    if ten_share1:
+        ten_share = []
+        for i in ten_share1:
             shareholder = i.get("sdgd", "")
-            # print("poi", shareholder)
+            rq = i.get("rq", "")
+            # print("poi", rq)
             # shareholder = ""
             if shareholder:
-                sh = {'rq': '', 'mc': '', 'gdmc': '', 'gflx': '合计', 'cgs': '', 'zltgbcgbl': '', 'zj': '', 'bdbl': ''}
-                total = 0
+                share = {}
+                ss = [["股东", "类型", "数量", "流通比例", "增减", "增减比例"]]
+                t = 0
                 for ii in shareholder:
                     # print(ii)
-                    ratio = ii.get("zltgbcgbl", "")
-                    if ratio:
-                        if ratio.endswith("%"):
-                            ratio = ratio.strip("%")
-                        total += float(ratio)
-                total = '{:.2f}%'.format(total)
-                sh['zltgbcgbl'] = total
-                shareholder.append(sh)
-                i.update({"sdgd": shareholder})
-                # print(k)
-                ten_share[k] = i
-                # pprint(ten_share)
-                # print(k)
-                k += 1
-    # print(ten_share)
+                    gdmc = ii.get("gdmc", "")
+                    gflx = ii.get("gflx", "")
+                    cgs = ii.get("cgs", "")
+                    if cgs:
+                        cgs = float(cgs.replace(",", ""))
+                        if cgs > 1000000:
+                            cgs = '{:.2f}亿'.format(cgs/100000000)
+                        else:
+                            cgs = '{}股'.format(cgs)
+                    zltgbcgbl = ii.get("zltgbcgbl", "")
+                    if zltgbcgbl:
+                        if zltgbcgbl.endswith("%"):
+                            t += float(zltgbcgbl.replace("%", ""))
+                        else:
+                            t += float(zltgbcgbl)
+                    zj = ii.get("zj", "")
+                    bdbl = ii.get("bdbl", "")
+                    ss.append([gdmc, gflx, cgs, zltgbcgbl, zj, bdbl])
+                ss.append(["合计", "", "", '{:.2f}%'.format(t), "", ""])
+                share["rq"] = rq
+                share["sdgd"] = ss
+                ten_share.append(share)
+    # pprint(ten_share)
     return ten_share
 
 
 # 十大流通股东
+# {'rq': '2021-03-31', 'mc': '1', 'gdmc': '中国铁路工程集团有限公司', 'gdxz': '其它', 'gflx': 'A股,H股',
+# 'cgs': '11,598,764,390', 'zltgbcgbl': '47.21%', 'zj': '不变', 'bdbl': '--'}
 def ten_big_current_share(detail_f):
-    ten_share = detail_f.get("sdltgd", "")  # 流通股东
+    ten_share1 = detail_f.get("sdltgd", "")  # 流通股东
     # pprint(ten_share)
     # ten_share = ""
-    if ten_share:
-        k = 0
-        for i in ten_share:
+    if ten_share1:
+        ten_share = []
+        for i in ten_share1:
             shareholder = i.get("sdltgd", "")
+            rq = i.get("rq", "")
+            # print("poi", rq)
             # print("poi", shareholder)
             # shareholder = ""
             if shareholder:
-                sh = {'rq': '', 'mc': '', 'gdmc': '', 'gdxz': '', 'gflx': '合计', 'cgs': '', 'zltgbcgbl': '', 'zj': '', 'bdbl': ''}
-                total = 0
+                share = {}
+                ss = [["股东", "股东性质", "类型", "数量", "流通比例", "增减", "增减比例"]]
+                t = 0
                 for ii in shareholder:
                     # print(ii)
-                    ratio = ii.get("zltgbcgbl", "")
-                    if ratio:
-                        if ratio.endswith("%"):
-                            ratio = ratio.strip("%")
-                        total += float(ratio)
-                total = '{:.2f}%'.format(total)
-                # print(total)
-                sh['zltgbcgbl'] = total
-                shareholder.append(sh)
-                i.update({"sdltgd": shareholder})
-                # # print(k)
-                ten_share[k] = i
-                # # print(k)
-                k += 1
-                # pprint(ten_share)
+                    gdmc = ii.get("gdmc", "")
+                    gdxz = ii.get("gdxz", "")
+                    gflx = ii.get("gflx", "")
+                    cgs = ii.get("cgs", "")
+                    if cgs:
+                        cgs = float(cgs.replace(",", ""))
+                        if cgs > 1000000:
+                            cgs = '{:.2f}亿'.format(cgs / 100000000)
+                        else:
+                            cgs = '{}股'.format(cgs)
+                    zltgbcgbl = ii.get("zltgbcgbl", "")
+                    if zltgbcgbl:
+                        if zltgbcgbl.endswith("%"):
+                            t += float(zltgbcgbl.replace("%", ""))
+                        else:
+                            t += float(zltgbcgbl)
+                    zj = ii.get("zj", "")
+                    bdbl = ii.get("bdbl", "")
+                    ss.append([gdmc, gdxz, gflx, cgs, zltgbcgbl, zj, bdbl])
+                ss.append(["合计", "", "", "", '{:.2f}%'.format(t), "", ""])
+                share["rq"] = rq
+                share["sdgd"] = ss
+                ten_share.append(share)
+    # pprint(ten_share)
     return ten_share
 
 
-# 机构持仓son
+# 机构持仓son {"rq":"2021-06-30","jglx":"基金","ccjs":"19","ccgs":"151888747","zltgbl":"0.75%","zltgbbl":"0.62%"}
 def institution_position_son(detail_f, code):
     quarter_n = detail_f.get("zlcc_rz", "")
     # print(quarter_n[0:3])
-    lgt = []
     if quarter_n:
-        # sh = {'rq': '', 'jglx': '机构类型', 'ccjs': '持仓家数', 'ccgs': '', 'zltgbl': '占流通股比', 'zltgbbl': '占总股本比'}
-        # if len(quarter_n) > 2:
-        #     quarter_n = quarter_n[0:3]
-        # quarter_n = quarter_n
-        for vv in quarter_n:
-            share_current = []
+        lgt = []
+        for v in quarter_n:
+            s = {}
+            share_current = [["类型", "家数", "数量", "占流通比", "占总比"]]
             url = 'http://emweb.securities.eastmoney.com/ShareholderResearch/MainPositionsHodlerAjax?date={}&code={}'
-            vv = requests.get(url.format(vv, code))
+            vv = requests.get(url.format(v, code))
             # print(vv.status_code)
             text = vv.text
             # print(text)
             if vv.status_code == 200 and text:
                 detail = json.loads(text)
-                share_current += detail
-                lgt.append(share_current)
+                # print(detail)
+                for d in detail:
+                    jglx = d.get("jglx", "")
+                    ccjs = d.get("ccjs", "")
+                    ccgs = d.get("ccgs", "")
+                    if ccgs:
+                        if ccgs != "--":
+                            ccgs = float(ccgs)
+                            if ccgs > 1000000:
+                                ccgs = '{:.2f}亿'.format(ccgs / 100000000)
+                            else:
+                                ccgs = '{}股'.format(ccgs)
+                    zltgbl = d.get("zltgbl", "")
+                    zltgbbl = d.get("zltgbbl", "")
+                    if ccjs != "--":
+                        share_current.append([jglx, ccjs, ccgs, zltgbl, zltgbbl])
+                s["rq"] = v
+                # print(v)
+                s["sdgd"] = share_current
+                lgt.append(s)
     # pprint(lgt)
     return lgt
 
 
-# 未来解禁
+# 未来解禁 {'jjsj': '2022-05-28', 'jjsl': '96.63万', 'jjgzzgbbl': '0.25%', 'jjgzltgbbl': '0.43%', 'gplx': '股权激励限售股份'}
 def lift_a_ban(detail_f):
     quarter_n = detail_f.get("xsjj", "")
-    # print(quarter_n)
-    return quarter_n
+    if quarter_n:
+        s = [["时间", "数量", "占总比", "占流通比", "类型"]]
+        for i in quarter_n:
+            s.append(list(i.values()))
+        # print(s)
+        return s
+    return ""
 
 
 # 东财个股陆股通详细 ,
@@ -1091,7 +1168,7 @@ def east_lgt_detail(code, headers):
         detail = json.loads(text).get("data", "")
         # print(detail)
         if detail:
-            lgt = []
+            lgt = [["日期", "占总比", "市值"]]
             for v in detail:
                 date = v.get("HDDATE", "")
                 zb = v.get("SHARESRATE", "")
@@ -1157,7 +1234,7 @@ def east_add_subtract(code, headers):
         detail = json.loads(text).get("Data", "")[0].get("Data", "")
         # print(detail)
         if detail:
-            lgt = []
+            lgt = [["名称", "增减", "方式", "变动占总股比%", "变动占流通比%", "剩股占总股比%", "剩股占流通比%", "开始日", "截至日", "公告日"]]
             for v in detail:
                 if v:
                     de = v.split("|")
@@ -1171,6 +1248,7 @@ def east_add_subtract(code, headers):
                     if de[10]:
                         de[10] = '{:.2f}'.format(float(de[10]))
                     lgt.append([de[6], de[7], de[11], de[10], de[9], de[-6], de[-4], de[-3], de[-2], de[-1]])
+            # print(lgt)
             return lgt
     return ""
 
@@ -1187,14 +1265,11 @@ def manager_add(code, headers):
         detail = demjson.decode(text, encoding='utf-8').get("data", "")  # 把json字符串变json对象
         # print(detail)
         if detail:
-            lgt = []
+            lgt = [['日期', '变动人', '变动数亿', '均价', '比例', '变动后亿', '原因', '类型', '懂监高', '关系']]
             # 日期，变动人，变动数亿，均价，比例，变动后亿，原因，类型，懂监高，关系
             for v in detail:  # '{"pages": 0, "data": [{stats: false}]}' 不是字符串{'stats': False}
                 if v:
                     # print(v)
-                    # stats = v.get("stats", "w")
-                    # print(not stats)
-                    # print(isinstance(v, str))
                     if not isinstance(v, str):
                         if not v.get("stats", ""):
                             break
@@ -1213,8 +1288,9 @@ def manager_add(code, headers):
                         de[0] = '{:.2f}%'.format(float(de[0]) / 10)
                     lg = [de[5], de[1], de[6], de[8], de[0], de[7], de[-3], de[4], de[-1], de[-5]]
                     lgt.append(lg)
-                    # print(lg)
-            return lgt
+            # print(lgt)
+            if len(lgt) >= 2:
+                return lgt
     return ""
 
 
@@ -1234,8 +1310,8 @@ def east_rz(code, headers):
             # print(d)
             # d = ""
             if d:
-                lgt = []
-                # 日期DATE，RZYE，流通比RZYEZB，'RZJME，'RQYE，融资融券差值 RZRQYECZ
+                lgt = [['日期', '融资余额', '余额占流通', '融资尽买入', '融券余额', '融资融券差值']]
+                # 日期DATE，融资余额RZYE，流通比RZYEZB，'RZJME，'RQYE，融资融券差值 RZRQYECZ
                 for v in d:
                     # print(v)
                     # v = ""
@@ -1255,19 +1331,20 @@ def east_rz(code, headers):
                             rqye = v.get("RQYE", "")
                             rzrqcz = v.get("RZRQYECZ", "")
                             if rzye:
-                                rzye = '{:.2f}'.format(float(rzye) / 100000000)
+                                rzye = '{:.2f}亿'.format(float(rzye) / 100000000)
                             if rzzb:
                                 rzzb = '{:.2f}%'.format(float(rzzb))
                             if rzjmr:
-                                rzjmr = '{:.2f}'.format(float(rzjmr) / 100000000)
+                                rzjmr = '{:.2f}亿'.format(float(rzjmr) / 100000000)
                             if rqye:
-                                rqye = '{:.2f}'.format(float(rqye) / 100000000)
+                                rqye = '{:.2f}亿'.format(float(rqye) / 100000000)
                             if rzrqcz:
-                                rzrqcz = '{:.2f}'.format(float(rzrqcz) / 100000000)
+                                rzrqcz = '{:.2f}亿'.format(float(rzrqcz) / 100000000)
                             lg = [str(da.date()), rzye, rzzb, rzjmr, rqye, rzrqcz]
                             lgt.append(lg)
                             # print(lg)
-                return lgt
+                if len(lgt) >= 2:
+                    return lgt
     return ""
 
 
@@ -1290,7 +1367,7 @@ def east_zllr(code, headers):
             # print(d)
             # d = ""
             if d:
-                lgt = []
+                lgt = [["日期", "流入净额"]]
                 # 日期DATE，流入净额RZYE
                 for v in d:
                     # print(v)
@@ -1307,15 +1384,16 @@ def east_zllr(code, headers):
                             if e.days < 0:
                                 break
                             if vv[1]:
-                                mf = '{:.2f}'.format(float(vv[1]) / 100000000)
+                                mf = '{:.2f}亿'.format(float(vv[1]) / 100000000)
                             lg = [str(da.date()), mf]
                             lgt.append(lg)
                             # print(lg)
-                return lgt
+                if len(lgt) >= 2:
+                    return lgt
     return ""
 
 
-# 东财机构调研 90天
+# 东财机构调研 90天 http://data.eastmoney.com/jgdy/gsjsdy/002913.html
 def institution_research(code, headers):
     url = 'http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/JGDYHZ/GetJGDYMX?js=&tkn=eastmoney&secuCode={}&sortfield=1&sortdirec=1&pageNum=1&pageSize=700&cfg=jgdyhz&_=1622808241272'
     vv = requests.get(url.format(code), headers=headers)
@@ -1332,7 +1410,7 @@ def institution_research(code, headers):
             # print(d)
             # d = ""
             if d:
-                lgt = []
+                lgt = [["公告日", "调研日", "数量", "方式"]]
                 # 公告日，调研日，数量，方式
                 for v in d:
                     # print(v)
@@ -1351,7 +1429,8 @@ def institution_research(code, headers):
                             lg = [vv[7], vv[8], vv[4], vv[11]]
                             lgt.append(lg)
                             # print(lg)
-                return lgt
+                if len(lgt) >= 2:
+                    return lgt
     return ""
 
 
@@ -1368,7 +1447,7 @@ def ins_research_report(code, headers):
         # print(detail)
         # detail = ""
         if detail:
-            lgt = []
+            lgt = [["日期", "标题"]]
             # 公告日，标题
             for v in detail:
                 # print(v)
@@ -1379,16 +1458,16 @@ def ins_research_report(code, headers):
                     # print(tit)
                     # vv = ""
                     if vv:
-                        lg = {"dd": vv[0:10], "tit": tit}
+                        lg = [vv[0:10], tit]
                     else:
-                        lg = {"dd": "", "tit": tit}
+                        lg = ["", tit]
                     lgt.append(lg)
                     # print(lg)
             return lgt
     return ""
 
 
-# 股东户数
+# 股东户数 http://data.eastmoney.com/gdhs/detail/601179.html
 def shareholder_number(code, headers):
     url = 'http://datacenter-web.eastmoney.com/api/data/v1/get?callback=&sortColumns=END_DATE&sortTypes=-1&pageSize=100&pageNumber=1&reportName=RPT_HOLDERNUM_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CCHANGE_SHARES%2CCHANGE_REASON%2CEND_DATE%2CINTERVAL_CHRATE%2CAVG_MARKET_CAP%2CAVG_HOLD_NUM%2CTOTAL_MARKET_CAP%2CTOTAL_A_SHARES%2CHOLD_NOTICE_DATE%2CHOLDER_NUM%2CPRE_HOLDER_NUM%2CHOLDER_NUM_CHANGE%2CHOLDER_NUM_RATIO%2CEND_DATE%2CPRE_END_DATE&quoteColumns=f2%2Cf3&filter=(SECURITY_CODE%3D%22{}%22)&source=WEB&client=WEB'
     vv = requests.get(url.format(code), headers=headers)
@@ -1402,7 +1481,7 @@ def shareholder_number(code, headers):
         if detail:
             li = detail.get("data", "")
             if li:
-                lgt = []
+                lgt = [["公告日", "截至", "股东人数", "增减比", "总市值", "股本数量", "股本变动", "原因"]]
                 # 公告日，截至，增减比,总市值，股东数量，变化股，原因
                 for v in li:
                     # print(v)
@@ -1419,6 +1498,7 @@ def shareholder_number(code, headers):
                         end_da = v.get("END_DATE", "")
                         if end_da:
                             end_da = end_da[0:10]
+                        holder_num = v.get("HOLDER_NUM", "")
                         add_rate = v.get("HOLDER_NUM_RATIO", "")
                         total = v.get("TOTAL_MARKET_CAP", "")
                         share_num = v.get("TOTAL_A_SHARES", "")
@@ -1433,18 +1513,12 @@ def shareholder_number(code, headers):
                         if change_share:
                             change_share = '{:.2f}亿'.format(change_share/100000000)
                         # print(tit)
-                        lg = {
-                            "notice_dat": str(da.date()),
-                            "end_da": end_da,
-                            "add_rate": add_rate,
-                            "total": total,
-                            "share_num": share_num,
-                            "change_share": change_share,
-                            "change_reason": v.get("CHANGE_REASON", ""),
-                        }
+                        lg = [str(da.date()), end_da, holder_num, add_rate, total, share_num,
+                              change_share, v.get("CHANGE_REASON", "")]
                         lgt.append(lg)
                         # print(lg)
-                return lgt
+                if len(lgt) >= 2:
+                    return lgt
     return ""
 
 
@@ -1453,7 +1527,7 @@ def per_dragon_tiger(code, headers):
     date_li = per_dragon_tiger1(code, headers)
     if len(date_li) > 2:
         date_li = date_li[0:2]
-    # print(date_li)
+    print(date_li)
     return per_dragon_tiger2(code, date_li, headers)
 
 
@@ -1510,25 +1584,21 @@ def per_dragon_tiger2(code, date_li, headers):
                             if v:
                                 n = v.split("|")
                                 if n:
-                                    if n[12]:
+                                    if n[12]:  # 13日期
                                         n[12] = n[12].split(" ")[0]
                                     # print(flag != n[13])
-                                    if flag != n[13]:
+                                    if flag != n[13]:  # 类型
                                         flag = n[13]
-                                        ss = ["", n[13], "", "", n[12], "", "", "", ""]
-                                        lg.append(ss)
+                                        lg.append(["", n[13], n[12], "", "", "", "", "", ""])
+                                        lg.append(["", "营业部", "上榜次数", "胜率%", "买入", "买入占成交%", "卖出", "卖出占成交%", "余额"])
                                     if n[10]:
                                         n[10] = '{:.2f}亿'.format(float(n[10]) / 100000000)
                                     if n[8]:
                                         n[8] = '{:.2f}亿'.format(float(n[8]) / 100000000)
                                     if n[19]:
                                         n[19] = '{:.2f}亿'.format(float(n[19]) / 100000000)
-
-                                    s = [n[1], n[18], n[20], n[21], n[10], n[16], n[8], n[15], n[19]]
-                                    lg.append(s)
+                                    lg.append([n[1], n[18], n[20], n[21], n[10], n[16], n[8], n[15], n[19]])
                         lgt.append(lg)
-                        # lgt.append({"type_date": n[12] + n[13], "lg": lg})
-                        # print(lg)
     # pprint(lgt)
     return lgt
 
@@ -1552,7 +1622,7 @@ def xiu_qiu_discuss(code):
         # print(detail)
         # detail = ""
         if detail:
-            lgt = []
+            lgt = [["日期", "标题", "描述"]]
             # 公告日，标题,描述
             for v in detail:
                 # print(v)
@@ -1564,10 +1634,11 @@ def xiu_qiu_discuss(code):
                     if description:
                         description = re.sub('<[^<]+?>', '', description).replace('\n', '').strip()
                         # print(c)
-                    lg = {"dis_time": v.get("timeBefore", ""), "title": v.get("title", ""), "description": description}
-                    lgt.append(lg)
+                    # lg = {"dis_time": v.get("timeBefore", ""), "title": v.get("title", ""), "description": description}
+                    lgt.append([v.get("timeBefore", ""), v.get("title", ""), description])
             # print(lgt)
-            return lgt
+            if len(lgt) >= 2:
+                return lgt
     print(code, "雪球cookie有误")
     open_chrome(url="https://xueqiu.com/S/SH600693")
     xq_dis += 1
@@ -1593,7 +1664,7 @@ def xiu_qiu_new(code):
         # print(detail)
         # detail = ""
         if detail:
-            lgt = []
+            lgt = [["日期", "标题", "描述"]]
             # 公告日，标题,描述
             for v in detail:
                 # print(v)
@@ -1605,16 +1676,18 @@ def xiu_qiu_new(code):
                     if description:
                         description = re.sub('<[^<]+?>', '', description).replace('\n', '').strip()
                     # print(tit)
-                    lg = {"dis_time": v.get("timeBefore", ""), "title": v.get("rawTitle", ""), "description": description}
+                    lg = [v.get("timeBefore", ""), v.get("rawTitle", ""), description]
+                    # lg = {"dis_time": v.get("timeBefore", ""), "title": v.get("rawTitle", ""), "description": description}
                     lgt.append(lg)
                     # print(lg)
             # print(lgt)
-            return lgt
+            if len(lgt) >= 2:
+                return lgt
     print(code, "资信有误")
     return ""
 
 
-# 个股公告
+# 个股公告 个股详情最后一项
 def stock_notice(code, headers):
     url = 'http://np-anotice-stock.eastmoney.com/api/security/ann?cb=&sr=-1&page_size=300&page_index=1&ann_type=A&client_source=web&stock_list={}&f_node=0&s_node=0'
     vv = requests.get(url.format(code), headers=headers)
@@ -1628,7 +1701,7 @@ def stock_notice(code, headers):
         if detail:
             li = detail.get("list", "")
             if li:
-                lgt = []
+                lgt = [["日期", "类型", "标题"]]
                 # 公告日，类型，标题
                 for v in li:
                     # print(v)
@@ -1648,8 +1721,8 @@ def stock_notice(code, headers):
                             col_type = col[0].get("column_name", "")
                         # title = v.get("title", "")
                         # print(tit)
-                        lg = {"dis_time": dis_time, "col_type": col_type, "title": v.get("title", "")}
-                        lgt.append(lg)
+                        # lg = {"dis_time": dis_time, "col_type": col_type, "title": v.get("title", "")}
+                        lgt.append([dis_time, col_type, v.get("title", "")])
                         # print(lg)
                 return lgt
     return ""
