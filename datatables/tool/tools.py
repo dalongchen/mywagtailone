@@ -3,6 +3,7 @@ from pprint import pprint
 from time import sleep
 import time
 import datetime
+import re
 spider = BaiduSpider()
 
 
@@ -16,13 +17,13 @@ def test_self():
 
 # 百度个股负面
 def bai_du(kw):
+    import html
     bai = spider.search_web(query=kw, pn=1, exclude=['tieba', 'video'])
     # print(type(bai))
     b = bai.get("results", "")
-    to = bai.get("total", "")
-    # print(kw)
-    # pprint(b[2:])
-    # bb.get("time", "")
+    to = bai.get("total", "")  # 页数
+    # print(to)
+    # pprint(b)
     if b:
         if to == (0 or ""):
             return
@@ -40,8 +41,14 @@ def bai_du(kw):
             sp = sp.get("results", "")
             if sp:
                 bai_d.extend(sp[2:])
-        # print(bai_d)
-        return bai_d
+        b = [["时间", "来源", "标题", "描述", "url"]]
+        for ii in bai_d:
+            if ii.get("origin", "") != "股吧":
+                l = list(ii.values())
+                res = re.findall(re.compile(u'[\u4e00-\u9fa5-\，\。]'), l[2])  # 去中文
+                b.append([l[4], ''.join(res).replace("-", ""), l[0], l[1], l[3]])
+        # print(b)
+        return b
     return
 
 
