@@ -35,7 +35,7 @@ def bai_du(kw):
             t = [2, 3]
         bai_d = b[2:]
         for i in t:
-            sleep(0.6)
+            sleep(1)
             # pprint(i)
             sp = spider.search_web(query=kw, pn=i, exclude=['tieba', 'video'])
             sp = sp.get("results", "")
@@ -45,8 +45,11 @@ def bai_du(kw):
         for ii in bai_d:
             if ii.get("origin", "") != "股吧":
                 l = list(ii.values())
-                res = re.findall(re.compile(u'[\u4e00-\u9fa5-\，\。]'), l[2])  # 去中文
-                b.append([l[4], ''.join(res).replace("-", ""), l[0], l[1], l[3]])
+                if l[2]:  # 取中文
+                    l[2] = ''.join(re.findall(re.compile(u'[\u4e00-\u9fa5-\，\。]'), l[2])).replace("-", "")
+                else:
+                    l[2] = ""
+                b.append([l[4], l[2], l[0], l[1], l[3]])
         # print(b)
         return b
     return

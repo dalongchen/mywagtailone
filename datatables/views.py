@@ -362,7 +362,7 @@ def stock_details(request):
     return HttpResponse(json.dumps(d))
 
 
-# 东财数据 vue stock
+# 东财选股数据 vue stock
 def east_data(request):
     re_get = request.GET
     headers = {
@@ -385,10 +385,6 @@ def east_data(request):
                 start1 = datetime.strptime(r[0][0:19], "%Y-%m-%d %H:%M:%S")
                 start2 = datetime.strptime(r[1][0:19], "%Y-%m-%d %H:%M:%S")
                 start3 = datetime.strptime(r[2][0:19], "%Y-%m-%d %H:%M:%S")
-                # print(r[0][0:19])
-                # print(start1)
-                # print(start2)
-                # print(start3)
                 d = vi_vu.good_notice_parent(headers, [start1, start2, start3])
             else:
                 d = []
@@ -429,7 +425,7 @@ def w163_history(code):
     return ""
 
 
-# 新浪即时行情 # 75.730,75.400,79.000,现价 79.480, 75.500, 79.000, 79.010, 3197647,总量 250231897.790,成交金额 2021-05-31,15:00:00,
+# one 新浪即时行情 # 75.730,75.400,79.000,现价 79.480, 75.500, 79.000, 79.010, 3197647,总量 250231897.790,成交金额 2021-05-31,15:00:00,
 def sina_real_time(code):  # 日期，时间 名字，现价，成交量，成交金额，
     # add_sh(code)
     vv = requests.get("http://hq.sinajs.cn/list={}".format(add_sh(code)))
@@ -441,7 +437,7 @@ def sina_real_time(code):  # 日期，时间 名字，现价，成交量，成�
             detail[8] = '{:.2f}亿'.format(float(detail[8]) / 100000000)
         if detail[9]:
             detail[9] = '{:.2f}亿'.format(float(detail[9]) / 100000000)
-        return [detail[-4], detail[-3], detail[0], detail[3], detail[8], detail[9]]
+        return [detail[-3], detail[-4], detail[0], detail[3], detail[8], detail[9]]
         # return {
         #     "name": detail[0],
         #     "now_price": detail[3],
@@ -453,7 +449,7 @@ def sina_real_time(code):  # 日期，时间 名字，现价，成交量，成�
     return ""
 
 
-# 财务指标 http://f10.eastmoney.com/f10_v2/FinanceAnalysis.aspx?code=SZ000785  # 这个应该是表格的90度翻转
+# two 财务指标 http://f10.eastmoney.com/f10_v2/FinanceAnalysis.aspx?code=SZ000785  # 这个应该是表格的90度翻转
 def stock_finance(code, headers):
     code = add_sh(code, big="big")
     # print(code)
@@ -811,7 +807,7 @@ def stock_finance(code, headers):
     return ""
 
 
-# 业绩
+# three 业绩
 def stock_achievement(code, headers):
     url = 'http://datacenter-web.eastmoney.com/api/data/get?callback=&st=REPORTDATE&sr=-1&ps=9&p=1&sty=ALL&filter=(SECURITY_CODE%3D%22{}%22)&token=894050c76af8597a853f5b408b759f5d&type=RPT_LICO_FN_CPD'
     # print(url.format(code))
@@ -899,7 +895,7 @@ def stock_achievement(code, headers):
     return ""
 
 
-# 业绩预告
+# four 业绩预告
 def performance_forecast(code, headers):
     url = 'http://datacenter-web.eastmoney.com/securities/api/data/v1/get?callback=&sortColumns=NOTICE_DATE&sortTypes=-1&pageSize=7&pageNumber=1&sty=ALL&filter=(SECURITY_CODE%3D%22{}%22)&token=894050c76af8597a853f5b408b759f5d&type=RPT_PUBLIC_OP_NEWPREDICT&st=REPORT_DATE&reportName=RPT_PUBLIC_OP_NEWPREDICT&columns=ALL'
     vv = requests.get(url.format(code), headers=headers)
@@ -971,18 +967,6 @@ def performance_forecast(code, headers):
                             mg_up = '{:.2f}%'.format(mg_up)
                         else:
                             mg_up = ""
-                        # lg = {
-                        #     "notice": notice,
-                        #     "report": report,
-                        #     "fin_type": fin_type,
-                        #     "ty": ty,
-                        #     "profit_low": profit_low,
-                        #     "profit_up": profit_up,
-                        #     "mg_low": mg_low,
-                        #     "mg_up": mg_up,
-                        #     "content": content,
-                        #     "reason": reason
-                        # }
                         lg = [notice, report, fin_type, ty, profit_low + "-" + profit_up,
                               mg_low + "-" + mg_up, content, reason]
                         lgt.append(lg)
@@ -1013,7 +997,7 @@ def institution_position(code, headers):
     return ""
 
 
-# 十大股东
+# five 十大股东
 def ten_big_share(detail_f):
     ten_share1 = detail_f.get("sdgd", "")
     # print(ten_share1)
@@ -1057,7 +1041,7 @@ def ten_big_share(detail_f):
     return ten_share
 
 
-# 十大流通股东
+# six 十大流通股东
 # {'rq': '2021-03-31', 'mc': '1', 'gdmc': '中国铁路工程集团有限公司', 'gdxz': '其它', 'gflx': 'A股,H股',
 # 'cgs': '11,598,764,390', 'zltgbcgbl': '47.21%', 'zj': '不变', 'bdbl': '--'}
 def ten_big_current_share(detail_f):
@@ -1105,7 +1089,7 @@ def ten_big_current_share(detail_f):
     return ten_share
 
 
-# 机构持仓son {"rq":"2021-06-30","jglx":"基金","ccjs":"19","ccgs":"151888747","zltgbl":"0.75%","zltgbbl":"0.62%"}
+# seven 机构持仓son {"rq":"2021-06-30","jglx":"基金","ccjs":"19","ccgs":"151888747","zltgbl":"0.75%","zltgbbl":"0.62%"}
 def institution_position_son(detail_f, code):
     quarter_n = detail_f.get("zlcc_rz", "")
     # print(quarter_n[0:3])
@@ -1145,7 +1129,7 @@ def institution_position_son(detail_f, code):
     return lgt
 
 
-# 未来解禁 {'jjsj': '2022-05-28', 'jjsl': '96.63万', 'jjgzzgbbl': '0.25%', 'jjgzltgbbl': '0.43%', 'gplx': '股权激励限售股份'}
+# night 未来解禁 {'jjsj': '2022-05-28', 'jjsl': '96.63万', 'jjgzzgbbl': '0.25%', 'jjgzltgbbl': '0.43%', 'gplx': '股权激励限售股份'}
 def lift_a_ban(detail_f):
     quarter_n = detail_f.get("xsjj", "")
     if quarter_n:
@@ -1157,7 +1141,7 @@ def lift_a_ban(detail_f):
     return ""
 
 
-# 东财个股陆股通详细 ,
+# ten 东财个股陆股通详细 ,
 def east_lgt_detail(code, headers):
     url = "http://dcfm.eastmoney.com/em_mutisvcexpandinterface/api/js/get?callback=&st=HDDATE&sr=-1&ps=10&p=1&type=HSGTHDSTA&token=894050c76af8597a853f5b408b759f5d&js=%7B%22data%22%3A(x)%2C%22pages%22%3A(tp)%2C%22font%22%3A(font)%7D&filter=(SCODE%3D%27{}%27)"
     vv = requests.get(url.format(code), headers=headers)
@@ -1187,7 +1171,7 @@ def east_lgt_detail(code, headers):
     return ""
 
 
-# 东财解禁详细
+# eleven 东财解禁详细
 def east_lift_ban(code, headers):
     url = "http://dcfm.eastmoney.com/em_mutisvcexpandinterface/api/js/get?callback=&st=ltsj&sr=-1&ps=50&p=1&token=70f12f2f4f091e459a279469fe49eca5&type=XSJJ_NJ_PC&js=%7B%22data%22%3A(x)%2C%22pages%22%3A(tp)%2C%22font%22%3A(font)%7D&filter=(gpdm%3D%27{}%27)"
     vv = requests.get(url.format(code), headers=headers)
@@ -1222,7 +1206,7 @@ def east_lift_ban(code, headers):
     return ""
 
 
-# 东财股东增持 半年 http://data.eastmoney.com/executive/gdzjc/000785.html
+# twelve 东财股东增持 半年 http://data.eastmoney.com/executive/gdzjc/000785.html
 def east_add_subtract(code, headers):
     url = "http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/GDZC/GetGDZC?js=&pageSize=50&pageNum=1&tkn=eastmoney&cfg=gdzc&secucode={}&fx=&sharehdname=&sortFields=BDJZ&sortDirec=1&startDate=&endDate=&_=1622589484998"
     vv = requests.get(url.format(code), headers=headers)
@@ -1249,11 +1233,12 @@ def east_add_subtract(code, headers):
                         de[10] = '{:.2f}'.format(float(de[10]))
                     lgt.append([de[6], de[7], de[11], de[10], de[9], de[-6], de[-4], de[-3], de[-2], de[-1]])
             # print(lgt)
-            return lgt
+            if len(lgt) >= 2:
+                return lgt
     return ""
 
 
-# 东财高管增持 1年 http://data.eastmoney.com/executive/000785.html
+# thirteen 东财高管增持 1年 http://data.eastmoney.com/executive/000785.html
 def manager_add(code, headers):
     url = 'http://datainterface.eastmoney.com/EM_DataCenter/JS.aspx?cb=&type=GG&sty=GGC&p=1&ps=30&code={}&name=&js=%7B"pages"%3A(pc)%2C"data"%3A%5B(x)%5D%7D&_=1622603931514'
     # print(url.format(code))
@@ -1294,7 +1279,7 @@ def manager_add(code, headers):
     return ""
 
 
-# 东财个股融资融券 10天 http://data.eastmoney.com/rzrq/detail/000785.html
+# fourteen 东财个股融资融券 10天 http://data.eastmoney.com/rzrq/detail/000785.html
 def east_rz(code, headers):
     url = 'http://datacenter-web.eastmoney.com/api/data/get?type=RPTA_WEB_RZRQ_GGMX&sty=ALL&source=WEB&st=DATE&sr=-1&p=1&ps=240&filter=(scode={})&callback=&_=1622688470305'
     vv = requests.get(url.format(code), headers=headers)
@@ -1348,7 +1333,7 @@ def east_rz(code, headers):
     return ""
 
 
-# 东财主力资金流入
+# fifteen 东财主力资金流入
 def east_zllr(code, headers):
     # code = code_add(code, param="1.")
     # print(code)
@@ -1393,7 +1378,7 @@ def east_zllr(code, headers):
     return ""
 
 
-# 东财机构调研 90天 http://data.eastmoney.com/jgdy/gsjsdy/002913.html
+# sixteen 东财机构调研 90天 http://data.eastmoney.com/jgdy/gsjsdy/002913.html
 def institution_research(code, headers):
     url = 'http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/JGDYHZ/GetJGDYMX?js=&tkn=eastmoney&secuCode={}&sortfield=1&sortdirec=1&pageNum=1&pageSize=700&cfg=jgdyhz&_=1622808241272'
     vv = requests.get(url.format(code), headers=headers)
@@ -1434,7 +1419,7 @@ def institution_research(code, headers):
     return ""
 
 
-# 个股研究报告 半年内
+# seventeen 个股研究报告 半年内
 def ins_research_report(code, headers):
     d = datetime.strptime(str(d_date.today() + timedelta(-190)), '%Y-%m-%d')  # 半年去日期
     url = 'http://reportapi.eastmoney.com/report/list?cb=&pageNo=1&pageSize=600&code={}&industryCode=*&industry=*&rating=*&ratingchange=*&beginTime={}&endTime={}&fields=&qType=0&_=1622819583383'
@@ -1467,7 +1452,7 @@ def ins_research_report(code, headers):
     return ""
 
 
-# 股东户数 http://data.eastmoney.com/gdhs/detail/601179.html
+# eighteen 股东户数 http://data.eastmoney.com/gdhs/detail/601179.html
 def shareholder_number(code, headers):
     url = 'http://datacenter-web.eastmoney.com/api/data/v1/get?callback=&sortColumns=END_DATE&sortTypes=-1&pageSize=100&pageNumber=1&reportName=RPT_HOLDERNUM_DET&columns=SECURITY_CODE%2CSECURITY_NAME_ABBR%2CCHANGE_SHARES%2CCHANGE_REASON%2CEND_DATE%2CINTERVAL_CHRATE%2CAVG_MARKET_CAP%2CAVG_HOLD_NUM%2CTOTAL_MARKET_CAP%2CTOTAL_A_SHARES%2CHOLD_NOTICE_DATE%2CHOLDER_NUM%2CPRE_HOLDER_NUM%2CHOLDER_NUM_CHANGE%2CHOLDER_NUM_RATIO%2CEND_DATE%2CPRE_END_DATE&quoteColumns=f2%2Cf3&filter=(SECURITY_CODE%3D%22{}%22)&source=WEB&client=WEB'
     vv = requests.get(url.format(code), headers=headers)
@@ -1522,7 +1507,7 @@ def shareholder_number(code, headers):
     return ""
 
 
-# 龙虎榜
+# nineteen 龙虎榜
 def per_dragon_tiger(code, headers):
     date_li = per_dragon_tiger1(code, headers)
     if len(date_li) > 2:
@@ -1603,7 +1588,7 @@ def per_dragon_tiger2(code, date_li, headers):
     return lgt
 
 
-# 雪球讨论
+# twenty one雪球讨论
 def xiu_qiu_discuss(code):
     code = add_sh(code, big="big")
     # print(code)
@@ -1645,7 +1630,7 @@ def xiu_qiu_discuss(code):
     return ""
 
 
-# 雪球资信 https://xueqiu.com/S/SH600693
+# twenty two 雪球资信 https://xueqiu.com/S/SH600693
 def xiu_qiu_new(code):
     code = add_sh(code, big="big")
     # print(code)
@@ -1687,7 +1672,7 @@ def xiu_qiu_new(code):
     return ""
 
 
-# 个股公告 个股详情最后一项
+# twenty three 个股公告 个股详情最后一项
 def stock_notice(code, headers):
     url = 'http://np-anotice-stock.eastmoney.com/api/security/ann?cb=&sr=-1&page_size=300&page_index=1&ann_type=A&client_source=web&stock_list={}&f_node=0&s_node=0'
     vv = requests.get(url.format(code), headers=headers)
@@ -1887,58 +1872,62 @@ def research_report(start_date="", end_date="", page_size="50", choice="add"):
     # end_date = "2021-05-09"
     # page_size = 100
     # choice = "add"
-    if start_date and end_date:
-        cursor = connection.cursor()
-        if choice == "add":
-            # 查新语句
-            cursor.execute("SELECT date FROM m_research_report ORDER BY date DESC LIMIT 0,1")
-            rows = cursor.fetchone()
-            # rows = cursor.fetchall()
-            if len(rows):
-                print('rows', rows[0])
-                start_date = rows[0]
-                stock_list = research_report_son(start_date, end_date, page_size, cursor)
-                print(stock_list)
-                le = len(stock_list)
-                print(le)
-                if le:
-                    with transaction.atomic():  # 都在事物中，要么都成功，要么都失败
-                        # 删除语句
-                        ccc = cursor.execute("delete from m_research_report where date=%s", [start_date])
-                        num = ccc.rowcount
-                        print("删除数量", num)
-                        if ccc.rowcount:
-                            # 插入语句
-                            sql = "insert into m_research_report(code,name,date) values ( %s, %s, %s)"
-                            for item in stock_list:
-                                c = cursor.execute(sql, list(item))
-                                # print(c.rowcount)
-                                if not c.rowcount:
-                                    print(name, "无插入")
-                            end_date_one = d_date.strftime(parser.isoparse(end_date) - relativedelta(months=12),
-                                                           '%Y-%m-%d')
-                            print(end_date_one)
-                            cursor.execute("SELECT distinct code FROM m_research_report as m WHERE m.date BETWEEN %s AND %s", [end_date_one, end_date])
-                            # rows = cursor.fetchone()
-                            rows = cursor.fetchall()
-                            if len(rows):
-                                stock_li = []
-                                for item in rows:
-                                    if len(item):
-                                        code1 = code_add(item[0]) + '\n'
-                                        stock_li.append(code1)
-                                if stock_li:
-                                    # print("", stock_li)
-                                    print("写入数", len(stock_li))
-                                    is_write_stock('research_report.blk', stock_li, "write")
-                                    cursor.close()
-                                    return "查询" + str(le) + "删除" + str(num) + "总数" + str(len(stock_li))
-            cursor.close()
-            #     c = copy_file(f, r"D:\myzq\axzq\T0002\blocknew\research_report_copy.blk")
-        elif choice == "all":
-            # is_write_stock('research_report.blk', stock_list, "write")
-            return l
-    return ""
+    if not start_date or not end_date:
+        start_date = d_date.today() + timedelta(-365)  # 一年前
+        end_date = str(d_date.today())  # 今天
+        # print(start_date)
+        # print(end_date)
+    cursor = connection.cursor()
+    if choice == "add":
+        # 查新语句
+        cursor.execute("SELECT date FROM m_research_report ORDER BY date DESC LIMIT 0,1")
+        rows = cursor.fetchone()
+        # rows = cursor.fetchall()
+        if len(rows):
+            # print('rows', rows[0])
+            # start_date = rows[0]
+            stock_list = research_report_son(start_date, end_date, page_size, cursor)
+            # print(stock_list)
+            le = len(stock_list)
+            # print(le)
+            if le:
+                with transaction.atomic():  # 都在事物中，要么都成功，要么都失败
+                    # 删除语句
+                    ccc = cursor.execute("delete from m_research_report where date=%s", [start_date])
+                    num = ccc.rowcount
+                    # print("删除数量", num)
+                    if ccc.rowcount:
+                        # 插入语句
+                        sql = "insert into m_research_report(code,name,date) values ( %s, %s, %s)"
+                        for item in stock_list:
+                            c = cursor.execute(sql, list(item))
+                            # print(c.rowcount)
+                            if not c.rowcount:
+                                print(name, "无插入")
+                        end_date_one = d_date.strftime(parser.isoparse(end_date) - relativedelta(months=12),
+                                                       '%Y-%m-%d')
+                        # print(end_date_one)
+                        cursor.execute("SELECT distinct code FROM m_research_report as m WHERE m.date BETWEEN %s AND %s", [end_date_one, end_date])
+                        # rows = cursor.fetchone()
+                        rows = cursor.fetchall()
+                        if len(rows):
+                            stock_li = []
+                            for item in rows:
+                                if len(item):
+                                    code1 = code_add(item[0]) + '\n'
+                                    stock_li.append(code1)
+                            if stock_li:
+                                # print("", stock_li)
+                                # print("写入数", len(stock_li))
+                                is_write_stock('research_report.blk', stock_li, "write")
+                                cursor.close()
+                                return "查询" + str(le) + "删除" + str(num) + "总数" + str(len(stock_li))
+        cursor.close()
+        return ""
+        #     c = copy_file(f, r"D:\myzq\axzq\T0002\blocknew\research_report_copy.blk")
+    elif choice == "all":
+        # is_write_stock('research_report.blk', stock_list, "write")
+        return l
 
 
 # 读东财研究报告股票数量子方法

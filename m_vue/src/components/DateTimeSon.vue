@@ -1,6 +1,5 @@
 <template>
-  <div class="block">
-    <span class="demonstration"></span>
+  <div>
     <el-date-picker
       v-model="value"
       type="date"
@@ -9,7 +8,7 @@
       :shortcuts="shortcuts"
       @change="send(value)"
       size="mini"
-      style="width: 250%"
+      style="width:150px"
     >
     </el-date-picker>
   </div>
@@ -22,6 +21,7 @@ export default defineComponent({
   name: "DateTimeSon",
   data() {
       return {
+        // eslint-disable-next-line
         disabledDate(time:any) {
           return time.getTime() > (Date.now() + 3600 * 1000 * 24)
         },

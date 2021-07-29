@@ -202,10 +202,10 @@ export default defineComponent({
               th: [                
                 {prop: "0", width: 105},
                 {prop: "1", width: 105},
-                {prop: "2", width: 105},
-                {prop: "3", width: 105},
-                {prop: "4", width: 105},
-                {prop: "5", width: 105},
+                {prop: "2", width: 125},
+                {prop: "3", width: 80},
+                {prop: "4", width: 90},
+                {prop: "5", width: 90},
                 {prop: "6", width: 205, t: true},
                 {prop: "7", width: 305, t: true},
               ]
@@ -318,9 +318,9 @@ export default defineComponent({
               flag: "3",
               data: r.add_subtract,  
               th: [                
-                {prop: "0", width: 105},
-                {prop: "1", width: 80},
-                {prop: "2", width: 90},
+                {prop: "0", width: 13},
+                {prop: "1", width: 70},
+                {prop: "2", width: 70},
                 {prop: "3", width: 80},
                 {prop: "4", width: 80},
                 {prop: "5", width: 80},
@@ -344,11 +344,11 @@ export default defineComponent({
               th: [                
                 {prop: "0", width: 105},
                 {prop: "1", width: 80},
-                {prop: "2", width: 90},
+                {prop: "2", width: 70},
                 {prop: "3", width: 80},
                 {prop: "4", width: 80},
-                {prop: "5", width: 80},
-                {prop: "6", width: 80},
+                {prop: "5", width: 70},
+                {prop: "6", width: 90},
                 {prop: "7", width: 105},
                 {prop: "8", width: 105},
                 {prop: "9", width: 105},
@@ -371,7 +371,7 @@ export default defineComponent({
                 {prop: "2", width: 100},
                 {prop: "3", width: 100},
                 {prop: "4", width: 100},
-                {prop: "5", width: 100},
+                {prop: "5", width: 80},
               ]
             };
           }
