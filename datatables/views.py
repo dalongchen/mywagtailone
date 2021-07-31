@@ -63,9 +63,15 @@ def index(request):
 
 # 各种选股
 def east_money_lgt(request):
-
     re_get = request.GET
     date = re_get.get("date", "")
+    s = re_get.get("s", "")
+    # print(s)
+    d_t = re_get.get("d_t", "")
+    if d_t:
+        gmt_format = '%a %b %d %Y %H:%M:%S GMT+0800 (中国标准时间)'
+        d_t = str(datetime.strptime(d_t, gmt_format))[0:10]
+    # 丢弃，和下面合并
     if re_get.get("ths_fund_inflow", "") == "ths_fund_inflow":
         open_chrome()
         # cookie = get_cookie()
@@ -74,79 +80,85 @@ def east_money_lgt(request):
         # return JsonResponse({'number': ""})
         return JsonResponse({'number': ths_fund_inflow(date, search, '400', "ths_fund_inflow")})
 
-    # 同花顺资金流入大于0， 资金净买入大于10万; 涨幅大于1%
-    if re_get.get("ths_fund_inflow0", "") == "ths_fund_inflow0":
-        # date = "2021-04-30"
-        open_chrome()
-        search = '资金净买入大于10万; 涨幅大于1%'
-        return JsonResponse({'number': ths_fund_inflow(date, search, '2000', "ths_fund_inflow0")})
+    # 同花顺资金净买入大于10万; 涨幅大于1% 以及  大于2500和涨幅1.6%
+    if s == "ths_fund_inflow0":
+        if d_t:
+            open_chrome()
+            s = ths_fund_inflow(date, '资金净买入大于10万; 涨幅大于1%', '2000', "ths_fund_inflow0")
+            # s = ""
+            sleep(2)
+            if s:
+                ss = ths_fund_inflow(date, '资金净买入大于2500万; 涨幅大于1.6%', '400', "ths_fund_inflow")
+            return JsonResponse({'number': "大10:" + s + "大2500:" + ss})
+        return JsonResponse({'number': "缺日期"})
 
     # 读东财龙虎榜
-    if re_get.get("east_dragon", "") == "east_dragon":
-        # print(date)
-        return JsonResponse({'number': east_dragon_tiger(date)})
-        # return HttpResponse({'number': '15'})
+    if s == "east_dragon":
+        if d_t:
+            return JsonResponse({'number': east_dragon_tiger(d_t)})
+        return JsonResponse({'number': '缺日期'})
 
     # 读东财陆股通
-    if re_get.get("east_lgt", "") == "east_lgt":
-        return JsonResponse({'number': east_lgt_finance(date, '400', "east_lgt")})
-        # return HttpResponse({'number': '15'})
+    if s == "east_lgt":
+        if d_t:
+            return JsonResponse({'number': east_lgt_finance(d_t, '400', "east_lgt")})
+        return JsonResponse({'number': '缺日期'})
 
     # 读东财上海融资
-    if re_get.get("east_finance_sh", "") == "east_finance_sh":
-        # date = "2021-04-30"
-        return JsonResponse({'number': east_lgt_finance(date, '300', "east_finance_sh")})
+    if s == "east_finance_sh":
+        if d_t:
+            return JsonResponse({'number': east_lgt_finance(d_t, '300', "east_finance_sh")})
+        return JsonResponse({'number': "缺日期"})
 
     # 读东财深圳融资
-    if re_get.get("east_finance_sz", "") == "east_finance_sz":
-        # date = "2021-04-30"
-        return JsonResponse({'number': east_lgt_finance(date, '200', "east_finance_sz")})
+    if s == "east_finance_sz":
+        if d_t:
+            return JsonResponse({'number': east_lgt_finance(d_t, '200', "east_finance_sz")})
+        return JsonResponse({'number': "缺日期"})
 
     # 读东财融资股票数量
-    if re_get.get("east_finance_number", "") == "east_finance_number":
-        # date = "2021-04-29"
-        # east_lgt(date, '300')
-        return JsonResponse({'number': east_lgt_finance(date, '500', "east_finance_number")})
+    if s == "east_finance_number":
+        if d_t:
+            return JsonResponse({'number': east_lgt_finance(d_t, '500', "east_finance_number")})
+        return JsonResponse({'number': "缺日期"})
 
     # 读东财陆股通股票数量
-    if re_get.get("east_lgt_number", "") == "east_lgt_number":
-        # date = "2021-04-29"
-        # east_lgt(date, '300')
-        return JsonResponse({'number': east_lgt_finance(date, '1800', "east_lgt_number")})
+    if s == "east_lgt_number":
+        if d_t:
+            return JsonResponse({'number': east_lgt_finance(d_t, '1800', "east_lgt_number")})
+        return JsonResponse({'number': "缺日期"})
 
-    # 读东财研究报告股票数量
-    if re_get.get("research_report", "") == "research_report":
-        return JsonResponse({'number': research_report(re_get.get("start_date", ""),
-                                                       re_get.get("end_date", ""), '100', "add")})
+    # 读东财研究报告和机构调研股票数量
+    if s == "research_report":
+        s = research_report(re_get.get("start_date", ""), re_get.get("end_date", ""), '100', "add")
+        ss = research_organization(re_get.get("start_date", ""), re_get.get("end_date", ""), '10000')
+        return JsonResponse({'number': s + ss})
 
-    # 读东财机构调研股票数量
+    # 读东财机构调研股票数量 被上面研报代替。
     if re_get.get("research_organization", "") == "research_organization":
         return JsonResponse({'number': research_organization(re_get.get("start_date", ""), re_get.get("end_date", ""), '10000', "research_organization")})
 
     # 交集和并集股票数量
-    if re_get.get("combine", "") == "combine":
+    if s == "combine":
         return JsonResponse({'number': combine()})
 
-    # 显示choice板块个股
-    if re_get.get("shown_choice", "") == "shown_choice":
-        stock_choice = read_choice("choice.blk")
-        print(stock_choice)
-        return JsonResponse({'stock_choice': stock_choice})
+    # 加雪球和自选 新版不需要显示choice板块个股
+    if s == "shown_choice":
+        write_self_hai_tong()  # 读choice写自选和海通自选
+        return JsonResponse({'number': "choice板块" + str(len(read_choice("choice.blk")))})
 
-    # 读choice写自选和海通自选
+    # 废弃，已经和上面合并。读choice写自选和海通自选
     if re_get.get("read_self_choice", "") == "read_self_choice":
         # print("read_self_choice")
         write_self_hai_tong()  # 读choice写自选和海通自选
         return JsonResponse({'is_success': "成功"})
 
     # 读dragon板块龙虎榜页面
-    if re_get.get("open_dragon", "") == "open_dragon":
-        dragon_tiger = read_dragon("DRAGON_TIGER.blk")
-        print(dragon_tiger)
-        return JsonResponse({'dragon_tiger': dragon_tiger})
+    if s == "open_dragon":
+        return JsonResponse({'number': read_dragon("DRAGON_TIGER.blk")})
 
     # 预埋单
-    if re_get.get("pre_paid", "no") == "pre_paid":
+    if s == "pre_paid":
         # 读取choice板块买入
         stock_list = read_choice_code("choice.blk")
         if len(stock_list):
@@ -167,15 +179,15 @@ def east_money_lgt(request):
             # else:
             #     print("股票软件出于安全考虑，无法频繁程序自动登录，请用手动登录交易系统")
             #     return JsonResponse({'pre_paid': u"无法频繁程序自动登录，请用手动登录交易系统"})
-            return JsonResponse({'pre_paid': u"成功"+str(len(stock_dict))})
+            return JsonResponse({'number': u"成功"+str(len(stock_dict))})
         else:
-            return JsonResponse({'pre_paid': u"失败"})
+            return JsonResponse({'number': u"失败"})
 
-    #  同花顺陆股通
-    if re_get.get("ths_lgt", "") == "ths_lgt":
-        # print(date)
-        number = ths_lgt(date)
-        return JsonResponse({'number': number})
+    #  同花顺陆股通  # 需要改cookie
+    if s == "ths_lgt":
+        if d_t:
+            return JsonResponse({'number': ths_lgt(d_t)})
+        return JsonResponse({'number': "缺日期 "})
 
     # 同花顺公告利好
     if re_get.get("ths_notice", "") == "ths_notice":
@@ -327,8 +339,8 @@ def stock_details(request):
     # ins_re_re = ""
     xq_discuss = xiu_qiu_discuss(number)  # 雪球讨论
     # xq_discuss = ""
-    # print("jdjd", xq_dis == 1)
     sleep(1.1)
+    # print("jdjd", xq_dis == 1)
     if xq_dis == 1:  # 为1时打开浏览器，读cookie，再来一次
         xq_discuss = xiu_qiu_discuss(number)  # 雪球讨论
         # xq_discuss = ""
@@ -362,7 +374,7 @@ def stock_details(request):
     return HttpResponse(json.dumps(d))
 
 
-# 东财选股数据 vue stock
+# 东财选股数据 新 vue stock
 def east_data(request):
     re_get = request.GET
     headers = {
@@ -371,7 +383,6 @@ def east_data(request):
     # 东财公告利好 vue stock
     if re_get.get("dc_notice", "") == "dc_notice":
         d_t = re_get.get("d_t", "")
-        print("tyr", d_t)
         if d_t:
             gmt_format = '%a %b %d %Y %H:%M:%S GMT+0800 (中国标准时间)'
             start = datetime.strptime(d_t, gmt_format)
@@ -432,12 +443,11 @@ def sina_real_time(code):  # 日期，时间 名字，现价，成交量，成�
     text = vv.text
     if vv.status_code == 200 and text:
         detail = text.split("\"")[1].split(",")
-        # print(detail)
         if detail[8]:
             detail[8] = '{:.2f}亿'.format(float(detail[8]) / 100000000)
         if detail[9]:
             detail[9] = '{:.2f}亿'.format(float(detail[9]) / 100000000)
-        return [detail[-3], detail[-4], detail[0], detail[3], detail[8], detail[9]]
+        return [detail[30], detail[31], detail[0], detail[3], detail[8], detail[9]]
         # return {
         #     "name": detail[0],
         #     "now_price": detail[3],
@@ -474,26 +484,26 @@ def stock_finance(code, headers):
                 '每股公积金(元)',
                 '每股未分配利润(元)',
                 '每股经营现金流(元)',
-                '营业总收入(元)',
+                '营业总收入',
 
-                '归属净利润(元)',
-                '扣非净利润(元)',
-                '营业总收入同比增长( %)',
-                '归属净利润同比增长( %)',
-                '扣非净利润同比增长( %)',
-                '营业总收入滚动环比增长( %)',
-                '归属净利润滚动环比增长( %)',
-                '扣非净利润滚动环比增长( %)',
-                '净资产收益率(加权)( %)',
-                '净资产收益率(扣非)( %)',
+                '归属净利润',
+                '扣非净利润',
+                '营业总收入同比增长',
+                '归属净利润同比增长',
+                '扣非净利润同比增长',
+                '营业总收入滚动环比增长',
+                '归属净利润滚动环比增长',
+                '扣非净利润滚动环比增长',
+                '净资产收益率(加权)',
+                '净资产收益率(扣非)',
 
-                '总资产收益率(加权)( %)',
-                '毛利率( %)',
-                '净利率( %)',
+                '总资产收益率(加权)',
+                '毛利率',
+                '净利率',
                 '流动比率',
                 '速动比率',
                 '现金流量比率',
-                '资产负债率( %)',
+                '资产负债率',
                 '权益乘数',
                 '产权比率',
                 '总资产周转天数(天)',
@@ -825,19 +835,19 @@ def stock_achievement(code, headers):
                 d = [
                     '公告日',
                     '截至',
-                    '收益',
-                    '扣非',
+                    '收益元',
+                    '扣非元',
                     '营收',
-                    '同比',
-                    '环比',
-                    '利润',
-                    '同比',
-                    '环比',
+                    '同比%',
+                    '环比%',
+                    '利润%',
+                    '同比%',
+                    '环比%',
 
-                    '净资产',
-                    '收益率',
-                    '现金流',
-                    '毛利',
+                    '净资产元',
+                    '收益率%',
+                    '现金流元',
+                    '毛利%',
                     '分配',
                 ]
                 lgt = [d]
@@ -970,7 +980,8 @@ def performance_forecast(code, headers):
                         lg = [notice, report, fin_type, ty, profit_low + "-" + profit_up,
                               mg_low + "-" + mg_up, content, reason]
                         lgt.append(lg)
-                return lgt
+                if len(lgt) >= 2:
+                    return lgt
     return ""
 
 
@@ -1011,7 +1022,7 @@ def ten_big_share(detail_f):
             # shareholder = ""
             if shareholder:
                 share = {}
-                ss = [["股东", "类型", "数量", "流通比例", "增减", "增减比例"]]
+                ss = [["股东", "类型", "数量", "占总比", "增减", "增减比例"]]
                 t = 0
                 for ii in shareholder:
                     # print(ii)
@@ -1058,7 +1069,7 @@ def ten_big_current_share(detail_f):
             # shareholder = ""
             if shareholder:
                 share = {}
-                ss = [["股东", "股东性质", "类型", "数量", "流通比例", "增减", "增减比例"]]
+                ss = [["股东", "股东性质", "类型", "数量", "占流通比", "增减", "增减比例"]]
                 t = 0
                 for ii in shareholder:
                     # print(ii)
@@ -1704,11 +1715,8 @@ def stock_notice(code, headers):
                         col_type = ""
                         if col:
                             col_type = col[0].get("column_name", "")
-                        # title = v.get("title", "")
-                        # print(tit)
-                        # lg = {"dis_time": dis_time, "col_type": col_type, "title": v.get("title", "")}
                         lgt.append([dis_time, col_type, v.get("title", "")])
-                        # print(lg)
+                print(lgt)
                 return lgt
     return ""
 
@@ -1740,7 +1748,7 @@ def combine():
     with open(p, "w") as f:  # 自动关闭
         f.writelines(tmp)
     # return ""
-    return str(le) + ":" + str(len(tmp))
+    return "并" + str(le) + "交" + str(len(tmp))
 
 
 # 涨幅 'Zdf': 1.1566,占流通比 'LTZB': 0.060944376156863  净买入 'ShareSZ_Chg_One': 535678176.0,
@@ -1768,24 +1776,24 @@ def east_lgt_finance(date, page, choice):
                 print(fund_inflow_list, "交集后")
                 print(len(fund_inflow_list), "交集后股数")
                 is_write_stock('lgt.blk', fund_inflow_list, "write")
-                return "交前" + str(le) + "交后" + str(len(fund_inflow_list))
+                return "陆股通交前" + str(le) + "交后" + str(len(fund_inflow_list))
     elif choice == "east_lgt_number":
+        # if not date:
+        #     date = str(d_date.today())  # 今天
+        #     print(date)
         lgt = requests.get("http://dcfm.eastmoney.com/EM_MutiSvcExpandInterface/api/js/get?type=HSGT20_GGTJ_SUM"
                            "&token=894050c76af8597a853f5b408b759f5d&st=ShareSZ_Chg_One&sr=-1&p=1&ps=" + page +
                            "&json={pages:(tp),data:(x)}&filter=(DateType=%271%27%20and%20HdDate=%27" + date + "%27)"
                                                                                                               "&rt=53887112")
-        print(lgt)
         if lgt.status_code == 200:
             stock_list = []
             for item in lgt.json():
                 code = code_add(item.get('SCode', ''))
                 stock_list.append(code + '\n')
-                # print(code)
-                # print(item.get('LTZB', '0'))
             # print(stock_list)
             print(len(stock_list))
             is_write_stock('east_lgt_number.blk', stock_list, "write")
-            return len(stock_list)
+            return "陆股通数量" + str(len(stock_list))
     elif choice == "east_finance_sh":
         finance = requests.get("http://datacenter.eastmoney.com/api/data/get?callback=&type=RPTA_WEB_RZRQ_GGMX&sty=ALL&source=WEB&p=1&ps={}&st=RZJME&sr=-1&filter=(TRADE_MARKET_CODE+in+(%22069001001001%22%2C%22069001001006%22))(date%3D%27{}%27)&pageNo=1&_=1620278889766".format(page, date))
         print(finance)
@@ -1811,7 +1819,7 @@ def east_lgt_finance(date, page, choice):
                         print(fund_inflow_list, "交集后股数")
                         print(len(fund_inflow_list), "交集后股数")
                         is_write_stock('east_finance_sh.blk', fund_inflow_list, "write")
-                        return "交前" + str(le) + "交后" + str(len(fund_inflow_list))
+                        return "上海交前" + str(le) + "交后" + str(len(fund_inflow_list))
         return ""
     elif choice == "east_finance_number":
         stock_list = []
@@ -1836,7 +1844,7 @@ def east_lgt_finance(date, page, choice):
                     # print(stock_list)
         print(len(stock_list))
         is_write_stock('east_finance_number.blk', stock_list, "write")
-        return len(stock_list)
+        return "两融" + str(len(stock_list))
     elif choice == "east_finance_sz":
         finance = requests.get("http://datacenter.eastmoney.com/api/data/get?callback=&type=RPTA_WEB_RZRQ_GGMX&sty=ALL&source=WEB&p=1&ps={}&st=RZJME&sr=-1&filter=(TRADE_MARKET_CODE+in+(%22069001002001%22%2C%22069001002002%22%2C%22069001002003%22))(date%3D%27{}%27)&pageNo=1&_=1620265586428".format(page, date))
         print(finance)
@@ -1862,7 +1870,7 @@ def east_lgt_finance(date, page, choice):
                         print(fund_inflow_list, "交集")
                         print(len(fund_inflow_list), "交集后股数")
                         is_write_stock('east_finance_sz.blk', fund_inflow_list, "write")
-                        return "交前" + str(le) + "交后" + str(len(fund_inflow_list))
+                        return "深圳交前" + str(le) + "交后" + str(len(fund_inflow_list))
         return ""
 
 
@@ -1884,8 +1892,8 @@ def research_report(start_date="", end_date="", page_size="50", choice="add"):
         rows = cursor.fetchone()
         # rows = cursor.fetchall()
         if len(rows):
-            # print('rows', rows[0])
-            # start_date = rows[0]
+            print('rows', rows[0])
+            start_date = rows[0]
             stock_list = research_report_son(start_date, end_date, page_size, cursor)
             # print(stock_list)
             le = len(stock_list)
@@ -1921,10 +1929,9 @@ def research_report(start_date="", end_date="", page_size="50", choice="add"):
                                 # print("写入数", len(stock_li))
                                 is_write_stock('research_report.blk', stock_li, "write")
                                 cursor.close()
-                                return "查询" + str(le) + "删除" + str(num) + "总数" + str(len(stock_li))
+                                return "研报" + str(len(stock_li))
         cursor.close()
         return ""
-        #     c = copy_file(f, r"D:\myzq\axzq\T0002\blocknew\research_report_copy.blk")
     elif choice == "all":
         # is_write_stock('research_report.blk', stock_list, "write")
         return l
@@ -1973,65 +1980,66 @@ def research_report_son(start_date, end_date, page_size, cursor):
 
 
 # 读东财机构调研股票数量
-def research_organization(start_date="", end_date="", page_size="50", choice=""):
+def research_organization(start_date="", end_date="", page_size="50"):
     # print(start_date)
     # print(end_date)
     # start_date = "2020-05-05"
     # end_date = "2021-05-05"
     # page_size = "10000"
-    if start_date and end_date:
-        stock_list = []
-        total_page = 1
-        format_pattern = '%Y-%m-%d'
-        for i in range(1, 200):
-            # print(pages)
-            # print(i > pages)
-            # if i > total_page:
-            # if i > 250:
-            if i > 1:
-                break
-            lgt = requests.get("http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/JGDYHZ/GetJGDYMX?js=&tkn=eastmoney&secuCode=&sortfield=0&sortdirec=1&pageNum={}&pageSize={}&cfg=jgdyhz&p={}&pageNo={}&_=1620232702240".format(i, page_size, i, i))
-            sleep(1.5)
-            status_code = lgt.status_code
-            print(str(status_code) + ":" + str(i))
-            text = lgt.text
-            # print(text)
-            if status_code == 200 and text:
-                data = json.loads(text).get("Data", "")
-                # print(js.get("size", "abc"))
+    if not start_date or not end_date:
+        start_date = str(d_date.today() + timedelta(-365))  # 一年前
+        end_date = str(d_date.today())  # 今天
+    stock_list = []
+    total_page = 1
+    format_pattern = '%Y-%m-%d'
+    for i in range(1, 200):
+        # print(pages)
+        # print(i > pages)
+        # if i > total_page:
+        # if i > 250:
+        if i > 1:
+            break
+        lgt = requests.get("http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/JGDYHZ/GetJGDYMX?js=&tkn=eastmoney&secuCode=&sortfield=0&sortdirec=1&pageNum={}&pageSize={}&cfg=jgdyhz&p={}&pageNo={}&_=1620232702240".format(i, page_size, i, i))
+        sleep(1.5)
+        status_code = lgt.status_code
+        print(str(status_code) + ":" + str(i))
+        text = lgt.text
+        # print(text)
+        if status_code == 200 and text:
+            data = json.loads(text).get("Data", "")
+            # print(js.get("size", "abc"))
+            # print(data)
+            if data:
+                data0 = data[0]
+                data = data0.get("Data", "")
                 # print(data)
                 if data:
-                    data0 = data[0]
-                    data = data0.get("Data", "")
-                    # print(data)
-                    if data:
-                        if i == 1:
-                            total_page = data0.get("TotalPage", "")
-                            print(total_page)
-                        for item in data:
-                            # print(item)
-                            lis = item.split("|")
-                            # print(lis)
+                    if i == 1:
+                        total_page = data0.get("TotalPage", "")
+                        print(total_page)
+                    for item in data:
+                        # print(item)
+                        lis = item.split("|")
+                        # print(lis)
+                        # print(lis[7])
+                        # 将 'time' 类型时间通过格式化模式转换为 'str' 时间
+                        end_difference = (datetime.strptime(lis[7], format_pattern) - datetime.strptime(end_date, format_pattern))
+                        start_difference = (datetime.strptime(lis[7], format_pattern) - datetime.strptime(start_date, format_pattern))
+                        # print(end_difference.days, '在当')
+                        if start_difference.days < 0:
+                            print(lis[7], '公告日期小于输入开始日期')
+                            break
+                        if end_difference.days <= 0:
                             # print(lis[7])
-                            # 将 'time' 类型时间通过格式化模式转换为 'str' 时间
-                            end_difference = (datetime.strptime(lis[7], format_pattern) - datetime.strptime(end_date, format_pattern))
-                            start_difference = (datetime.strptime(lis[7], format_pattern) - datetime.strptime(start_date, format_pattern))
-                            # print(end_difference.days, '在当')
-                            if start_difference.days < 0:
-                                print(lis[7], '公告日期小于输入开始日期')
-                                break
-                            if end_difference.days <= 0:
-                                # print(lis[7])
-                                code = code_add(lis[5]) + '\n'
-                                if code not in stock_list:
-                                    stock_list.append(code)
-                                    # print(code)
-        # print(stock_list)
-        l = len(stock_list)
-        print(l)
-        is_write_stock('research_organization.blk', stock_list, "write")
-        return l
-    return ""
+                            code = code_add(lis[5]) + '\n'
+                            if code not in stock_list:
+                                stock_list.append(code)
+                                # print(code)
+    # print(stock_list)
+    l = len(stock_list)
+    print(l)
+    is_write_stock('research_organization.blk', stock_list, "write")
+    return "机调" + str(l)
 
 
 # 读东财龙虎榜 # 净买入 'JmMoney': '63519965.72',涨幅 'Chgradio': '9.98',
@@ -2078,7 +2086,7 @@ def east_dragon_tiger(date):
         #     # print(dragon_tiger_contract)
         #     is_write_stock('dragon_tiger_contract.blk', dragon_tiger_contract, "write")
         #     return "总=" + str(len(tiger_list)-1) + "机构=" + str(i-1) + "交集=" + str(len(dragon_tiger_contract))
-        return "总=" + str(len(tiger_list)-1) + "机构=" + str(i-1) + "交集= ?"
+        return "总" + str(len(tiger_list)-1) + "机构" + str(i-1)
     return ""
 
 
@@ -2104,11 +2112,9 @@ def ths_fund_inflow(date, search, number, choice):
     }
     fund_inflow = requests.post("http://x.10jqka.com.cn/unifiedwap/unified-wap/v2/result/get-robot-data",
                                 headers=headers, data=ths_data)
-    print(fund_inflow)
     if fund_inflow.status_code == 200:
         fund_inflow_data = fund_inflow.json().get('data', '').get('answer', '')[0].get('txt', '')[0].get('content', '') \
             .get('components', '')[0].get('data', '').get('datas', '')
-        # print(code_count)
         fund_inflow_list = []
         for item in fund_inflow_data:
             code = code_add(item.get('code', ''))
@@ -2127,10 +2133,11 @@ def ths_fund_inflow(date, search, number, choice):
             is_write_stock('fund_inflow.blk', fund_inflow_list, "write")
         elif choice == "ths_fund_inflow0":
             is_write_stock('ths_fund_inflow0.blk', fund_inflow_list, "write")
-        return len(fund_inflow_list)
+        return str(len(fund_inflow_list))
     return ""
 
 
+# 需要改cookie
 def ths_lgt(date):
     headers = {
         "Cookie": "PHPSESSID=4ea026e44bb06c30e0a0dafdf5e0dfd1; other_uid=Ths_iwencai_Xuangu_9j2forruvxyo7a62uswxpyk2j2z2su4r; cid=3334c28eb211f54e6885d80b6b2f051a1609357041; user_status=0; Hm_lvt_78c58f01938e4d85eaf619eae71b4ed1=1615319471; cid=3334c28eb211f54e6885d80b6b2f051a1609357041; ComputerID=3334c28eb211f54e6885d80b6b2f051a1609357041; WafStatus=0; Hm_lpvt_78c58f01938e4d85eaf619eae71b4ed1=1617115747; v=A1YU4TH-Kl4n8x76z21Nvq4kpwdL95hI7DjOlcC9Q-vUm_izKIfqQbzLHrCT",
@@ -2518,7 +2525,7 @@ def pre_paid(stock_dict, dialog="", t="interface"):
             #             pass
 
 
-# 查询收盘价。5.30后  f == "2"查询收盘价和名字
+# 查询当天收盘价。5.30后  f == "2"查询收盘价和名字
 def inquiry_close(stock_list, date, buy="买入", f="1"):
     # 登陆系统
     lg = bs.login()

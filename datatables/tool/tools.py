@@ -17,7 +17,6 @@ def test_self():
 
 # 百度个股负面
 def bai_du(kw):
-    import html
     bai = spider.search_web(query=kw, pn=1, exclude=['tieba', 'video'])
     # print(type(bai))
     b = bai.get("results", "")
@@ -43,13 +42,14 @@ def bai_du(kw):
                 bai_d.extend(sp[2:])
         b = [["时间", "来源", "标题", "描述", "url"]]
         for ii in bai_d:
-            if ii.get("origin", "") != "股吧":
+            if ii.get("origin", "") != "股吧" and ii.get("type", "") != "baike":
                 l = list(ii.values())
-                if l[2]:  # 取中文
-                    l[2] = ''.join(re.findall(re.compile(u'[\u4e00-\u9fa5-\，\。]'), l[2])).replace("-", "")
-                else:
-                    l[2] = ""
-                b.append([l[4], l[2], l[0], l[1], l[3]])
+                if l and len(l) >= 3:
+                    if l[2]:  # 取中文
+                        l[2] = ''.join(re.findall(re.compile(u'[\u4e00-\u9fa5-\，\。]'), l[2])).replace("-", "")
+                    else:
+                        l[2] = ""
+                    b.append([l[4], l[2], l[0], l[1], l[3]])
         # print(b)
         return b
     return

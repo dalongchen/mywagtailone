@@ -5,7 +5,11 @@
     <router-link to="/tail">Tail</router-link> |
     <router-link to="/stock">Stock</router-link> |
     <router-link to="/test">Test</router-link>
-    <router-view/>
+    <router-view v-slot="{ Component }">
+      <keep-alive :max="5" include="Tail,Stock">
+        <component :is="Component"/>
+      </keep-alive>
+    </router-view>
     </div>
 </template>
 

@@ -318,7 +318,7 @@ export default defineComponent({
               flag: "3",
               data: r.add_subtract,  
               th: [                
-                {prop: "0", width: 13},
+                {prop: "0", width: 130},
                 {prop: "1", width: 70},
                 {prop: "2", width: 70},
                 {prop: "3", width: 80},
