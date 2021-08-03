@@ -48,6 +48,16 @@ from .tool import tools
 from .tool import mysetting
 from .view import view_vue_stock as vi_vu
 from pprint import pprint
+from ratelimit.decorators import ratelimit
+import numpy as np
+import pandas as pd
+import unicodedata
+# import matplotlib.pyplot as plt
+# from nltk.sentiment.vader import SentimentIntensityAnalyzer
+# from treeinterpreter import treeinterpreter as ti
+# from sklearn.ensemble import RandomForestRegressor
+# from sklearn.linear_model import LogisticRegression
+# from sklearn.neural_network import MLPClassifier
 
 
 def index(request):
@@ -62,6 +72,7 @@ def index(request):
 
 
 # 各种选股
+@ratelimit(key='ip', rate='1/10s', block=True)
 def east_money_lgt(request):
     re_get = request.GET
     date = re_get.get("date", "")
@@ -169,16 +180,8 @@ def east_money_lgt(request):
         # print(stock_dict)
         # stock_dict = ""
         if len(stock_dict):
-            # date = "2021-04-26"
-            # stock_dict = inquiry_close(stock_list, date)  # 获取收盘价
             pre_paid(stock_dict, t="backstage")  # t="backstage"时从交易软件后台数据库添加
             log_on_ht()  # 登录海通
-            # dialog = log_on_ht()  # 登录海通
-            # if dialog:
-            #     pre_paid(stock_dict, dialog=dialog)  # t="backstage"时从交易软件后台数据库添加
-            # else:
-            #     print("股票软件出于安全考虑，无法频繁程序自动登录，请用手动登录交易系统")
-            #     return JsonResponse({'pre_paid': u"无法频繁程序自动登录，请用手动登录交易系统"})
             return JsonResponse({'number': u"成功"+str(len(stock_dict))})
         else:
             return JsonResponse({'number': u"失败"})
@@ -218,13 +221,14 @@ def east_money_lgt(request):
     # 同花顺选股
     if re_get.get("ths_choice", "") == "ths_choice":
         open_chrome()
-        ths_in = re_get.get("ths_in", "")
-        print(ths_in)
-        # date = "2021-04-28"
-        n = ths_choice(ths_in)
-        # number = ""
-        # print(number)
-        return JsonResponse({'number': len(n)})
+        t = re_get.get("t", "")
+        if t:
+            if not d_t:
+                return JsonResponse({'number': "缺日期"})
+            if t == "ths_lgt02":
+                s = "{}陆股通净买入大于1000万；{}陆股通净买入占流通股市值的比例大于0.2%".format(d_t, d_t)
+            return JsonResponse({'number': len(ths_choice(s, f="lgtda02.blk"))})
+        return JsonResponse({'number': len(ths_choice(re_get.get("ths_in", "")))})
 
     # 打开个股详情雪球,东财
     if re_get.get("open_stock_detail", "") == "open_stock_detail":
@@ -282,6 +286,7 @@ xq_dis = 0
 
 
 # 单个股票详情 vue为前端
+@ratelimit(key='ip', rate='1/10s', block=True)
 def stock_details(request):
     global xq_dis  # 雪球讨论取不到是把其置为1，再取一次
     re_get = request.GET
@@ -291,6 +296,8 @@ def stock_details(request):
         stock_li = read_choice("choice.blk", xue_qiu="")
         # print(stock_li)
         return HttpResponse(json.dumps(stock_li))
+    # print("df")
+    # return HttpResponse(json.dumps("oo"))
     number = re.sub("\D", "", st)
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.67 Safari/537.36',
@@ -375,6 +382,7 @@ def stock_details(request):
 
 
 # 东财选股数据 新 vue stock
+@ratelimit(key='ip', rate='1/10s', block=True)
 def east_data(request):
     re_get = request.GET
     headers = {
@@ -405,14 +413,22 @@ def east_data(request):
     return JsonResponse("")
 
 
+# 人工智能
+@ratelimit(key='ip', rate='1/10s', block=True)
+def artificial_intelligence(request):
+    re_get = request.GET
+    print("yt")
+    return JsonResponse({"number": "ok"})
+
+
 # 网易 历史行情
-# 日期 代码 名称 收盘价 最高价	最低价	开盘价 前收盘 涨跌额 涨跌幅	换手率	成交量 成交金额 总市值	流通市值 成交笔数
-#  TCLOSE收盘价 ;HIGH最高价;LOW最低价;TOPEN开盘价;LCLOSE前收盘价;CHG涨跌额;PCHG涨跌幅;TURNOVER换手率;VOTURNOVER成交量;VATURNOVER成交金额;TCAP总市值;MCAP流通市值
 def w163_history(code):
     code = code_add(code, param="param")
     print(code, "poy")
     v = requests.get( "http://quotes.money.163.com/service/chddata.html?code={}&start={}&end={}&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP".format(code, "20210506", "20210506"))
     text = v.text
+    # 日期 代码 名称 收盘价 最高价	最低价	开盘价 前收盘 涨跌额 涨跌幅	换手率	成交量 成交金额 总市值	流通市值 成交笔数
+    #  TCLOSE收盘价 ;HIGH最高价;LOW最低价;TOPEN开盘价;LCLOSE前收盘价;CHG涨跌额;PCHG涨跌幅;TURNOVER换手率;VOTURNOVER成交量;VATURNOVER成交金额;TCAP总市值;MCAP流通市值
     if v.status_code == 200 and text:
         try:
             t = text.split("\r")[1].split(",")
@@ -1716,8 +1732,8 @@ def stock_notice(code, headers):
                         if col:
                             col_type = col[0].get("column_name", "")
                         lgt.append([dis_time, col_type, v.get("title", "")])
-                print(lgt)
-                return lgt
+                if len(lgt) >= 2:
+                    return lgt
     return ""
 
 
@@ -2258,8 +2274,8 @@ def ths_rise(date, up_rise):
         return ""
 
 
-# 同花顺选股
-def ths_choice(ths_in, t="1"):
+# 同花顺选股 1为写入通达信
+def ths_choice(ths_in, t="1", f="ths_choice.blk"):
     cookie = get_cookie()
     headers = {
         "Cookie": "chat_bot_session_id=7bcebb62fb52a2de11bf41ec05073886; "
@@ -2280,7 +2296,6 @@ def ths_choice(ths_in, t="1"):
     }
     lgt = requests.post("http://x.10jqka.com.cn/unifiedwap/unified-wap/v2/result/get-robot-data", headers=headers,
                         data=ths_data)
-    print(lgt)
     if lgt.status_code == 200:
         lgt_data = lgt.json().get('data', '').get('answer', '')[0].get('txt', '')[0].get('content', '') \
             .get('components', '')[0].get('data', '').get('datas', '')
@@ -2292,11 +2307,8 @@ def ths_choice(ths_in, t="1"):
                     lgt_list.append(code_add(item.get('code', '')) + '\n')
                 else:
                     lgt_list.append(item.get('code', ''))
-            # lgt_list = sorted(set(lgt_list), key=lgt_list.index)
-            # print(lgt_list)
-            # print(len(lgt_list))
             if t == "1":
-                is_write_stock('ths_choice.blk', lgt_list, "write")
+                is_write_stock(f, lgt_list, "write")
             return lgt_list
     return ""
 
