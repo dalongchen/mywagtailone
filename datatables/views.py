@@ -12,8 +12,8 @@ from django.utils.safestring import mark_safe
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
-from .models import ShgtDf2021
-from .models import MResearchReport as mrr
+# from .models import ShgtDf2021
+# from .models import MResearchReport as mrr
 from django.http import HttpResponse, JsonResponse
 from django.db import connection
 import json
@@ -52,12 +52,12 @@ from ratelimit.decorators import ratelimit
 import numpy as np
 import pandas as pd
 import unicodedata
-# import matplotlib.pyplot as plt
-# from nltk.sentiment.vader import SentimentIntensityAnalyzer
-# from treeinterpreter import treeinterpreter as ti
-# from sklearn.ensemble import RandomForestRegressor
-# from sklearn.linear_model import LogisticRegression
-# from sklearn.neural_network import MLPClassifier
+import matplotlib.pyplot as plt
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from treeinterpreter import treeinterpreter as ti
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
 
 
 def index(request):
@@ -417,6 +417,10 @@ def east_data(request):
 @ratelimit(key='ip', rate='1/10s', block=True)
 def artificial_intelligence(request):
     re_get = request.GET
+    df_stocks = pd.read_pickle('data/pickled_ten_year_filtered_data.pkl')
+    df_stocks['prices'] = df_stocks['adj close'].apply(np.int64)
+    df_stocks = df_stocks[['prices', 'articles']]
+    df_stocks['articles'] = df_stocks['articles'].map(lambda x: x.lstrip('.-'))
     print("yt")
     return JsonResponse({"number": "ok"})
 
@@ -2537,7 +2541,7 @@ def pre_paid(stock_dict, dialog="", t="interface"):
             #             pass
 
 
-# 查询当天收盘价。5.30后  f == "2"查询收盘价和名字
+# 查询当天收盘价并构建数据给交易软件。5.30后  f == "2"查询收盘价和名字
 def inquiry_close(stock_list, date, buy="买入", f="1"):
     # 登陆系统
     lg = bs.login()
@@ -2584,6 +2588,8 @@ def inquiry_close(stock_list, date, buy="买入", f="1"):
                 # print(item)
                 rs = bs.query_history_k_data_plus(item, "close,", start_date=date, end_date=date,
                                                   frequency="d", adjustflag="3")
+                if not rs.next():
+                    print("无数据，检查输入是否为未上市新股或日期（每天收盘5点后）或代码格式（sz,000001,sh.600000）")
                 # print('query_history_k_data_plus respond error_code:' + rs.error_code)
                 while (rs.error_code == '0') & rs.next():
                     # 获取一条记录，将记录合并在一起
