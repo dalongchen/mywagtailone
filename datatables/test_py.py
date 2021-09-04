@@ -1,4 +1,5 @@
 from . import views
+from .tool import tools
 
 
 def test_sina_real_time():
@@ -15,3 +16,6 @@ def test_inquiry_close():
     assert len(d) == 1
 
 
+# 查指数加sh.
+def test_history_k_data():
+    tools.history_k_data(code="sh.000001", start_date='2018-07-31', end_date='2021-07-31', frequency="d", adjustflag="1")

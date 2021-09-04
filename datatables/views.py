@@ -1,7 +1,5 @@
 import os
 import sys
-# sys.path.insert(0, os.path.dirname(os.getcwd()))
-# print("rte", os.path.dirname(os.getcwd()))
 import re
 import time
 from time import sleep
@@ -72,41 +70,34 @@ def index(request):
 
 
 # 各种选股
-@ratelimit(key='ip', rate='1/10s', block=True)
+@ratelimit(key='ip', rate='2/15s', block=True)
 def east_money_lgt(request):
     re_get = request.GET
-    date = re_get.get("date", "")
+    # date = re_get.get("date", "")
     s = re_get.get("s", "")
     # print(s)
     d_t = re_get.get("d_t", "")
     if d_t:
         gmt_format = '%a %b %d %Y %H:%M:%S GMT+0800 (中国标准时间)'
         d_t = str(datetime.strptime(d_t, gmt_format))[0:10]
-    # 丢弃，和下面合并
-    if re_get.get("ths_fund_inflow", "") == "ths_fund_inflow":
-        open_chrome()
-        # cookie = get_cookie()
-        # date = "2021-04-30"
-        search = '资金净买入大于2500万; 涨幅大于1.6%'
-        # return JsonResponse({'number': ""})
-        return JsonResponse({'number': ths_fund_inflow(date, search, '400', "ths_fund_inflow")})
 
-    # 同花顺资金净买入大于10万; 涨幅大于1% 以及  大于2500和涨幅1.6%
+    # 同花顺资金净买入大于10万; 涨幅大于1% 以及  大于5000和涨幅3%
     if s == "ths_fund_inflow0":
         if d_t:
             open_chrome()
-            s = ths_fund_inflow(date, '资金净买入大于10万; 涨幅大于1%', '2000', "ths_fund_inflow0")
+            s = ths_fund_inflow('{}资金净买入大于10万; 涨幅大于1%'.format(d_t), '2000', "ths_fund_inflow0")
             # s = ""
             sleep(2)
             if s:
-                ss = ths_fund_inflow(date, '资金净买入大于2500万; 涨幅大于1.6%', '400', "ths_fund_inflow")
-            return JsonResponse({'number': "大10:" + s + "大2500:" + ss})
+                ss = ths_fund_inflow('{}资金净买入大于5000万;{}资金净买入占流通市值比大于1%;{}涨幅大于3%'.format(d_t, d_t, d_t), '400', "ths_fund_inflow")
+            return JsonResponse({'number': "10w1%:" + s + "/5kw3%:" + ss})
         return JsonResponse({'number': "缺日期"})
 
     # 读东财龙虎榜
     if s == "east_dragon":
         if d_t:
-            return JsonResponse({'number': east_dragon_tiger(d_t)})
+            return JsonResponse({'number': east_dragon_tiger_new(d_t)})
+            # return JsonResponse({'number': east_dragon_tiger(d_t)})
         return JsonResponse({'number': '缺日期'})
 
     # 读东财陆股通
@@ -146,8 +137,8 @@ def east_money_lgt(request):
         return JsonResponse({'number': s + ss})
 
     # 读东财机构调研股票数量 被上面研报代替。
-    if re_get.get("research_organization", "") == "research_organization":
-        return JsonResponse({'number': research_organization(re_get.get("start_date", ""), re_get.get("end_date", ""), '10000', "research_organization")})
+    # if re_get.get("research_organization", "") == "research_organization":
+    #     return JsonResponse({'number': research_organization(re_get.get("start_date", ""), re_get.get("end_date", ""), '10000', "research_organization")})
 
     # 交集和并集股票数量
     if s == "combine":
@@ -159,10 +150,10 @@ def east_money_lgt(request):
         return JsonResponse({'number': "choice板块" + str(len(read_choice("choice.blk")))})
 
     # 废弃，已经和上面合并。读choice写自选和海通自选
-    if re_get.get("read_self_choice", "") == "read_self_choice":
-        # print("read_self_choice")
-        write_self_hai_tong()  # 读choice写自选和海通自选
-        return JsonResponse({'is_success': "成功"})
+    # if re_get.get("read_self_choice", "") == "read_self_choice":
+    #     # print("read_self_choice")
+    #     write_self_hai_tong()  # 读choice写自选和海通自选
+    #     return JsonResponse({'is_success': "成功"})
 
     # 读dragon板块龙虎榜页面
     if s == "open_dragon":
@@ -173,10 +164,10 @@ def east_money_lgt(request):
         # 读取choice板块买入
         stock_list = read_choice_code("choice.blk")
         if len(stock_list):
-            stock_dict = inquiry_close(stock_list, date, f="2")  # f="2" 获取收盘价和名字
+            stock_dict = inquiry_close(stock_list, d_t, f="2")  # f="2" 获取收盘价和名字
         stock_sell = read_choice_code("choice_sell.blk")
         if len(stock_sell):
-            stock_dict += inquiry_close(stock_sell, date, buy="卖出", f="2")  # f="2" 获取收盘价和名字
+            stock_dict += inquiry_close(stock_sell, d_t, buy="卖出", f="2")  # f="2" 获取收盘价和名字
         # print(stock_dict)
         # stock_dict = ""
         if len(stock_dict):
@@ -186,26 +177,54 @@ def east_money_lgt(request):
         else:
             return JsonResponse({'number': u"失败"})
 
+    # 备份 股票数据
+    if s == "backup":
+        if os.path.exists(r"E:"):
+            if os.path.exists(r"D:\myzq\thwt\data\ymddata.db"):  # 如果文件存在
+                import shutil
+                if os.path.exists(r"E:\ymddata.db"):
+                    os.remove(r"E:\ymddata.db")  # 删除文件
+                try:
+                    shutil.copyfile(r"D:\myzq\thwt\data\ymddata.db", r"E:\ymddata.db")
+                except IOError as e:
+                    print("Unable to copy file. %s" % e)
+                    exit(1)
+                except:
+                    print("Unexpected error:", sys.exc_info())
+                    exit(1)
+            else:
+                return JsonResponse({'number': "没交易路径"})
+
+            if os.path.exists(r"D:\myzq\axzq\T0002"):  # 如果文件存在
+                if os.path.exists(r"E:\T0002\T0002.zip"):
+                    os.remove(r"E:\T0002\T0002.zip")
+                tools.create_zip(r"D:\myzq\axzq\T0002", r"E:\T0002", note="T0002")
+                return JsonResponse({'number': "ok"})
+            else:
+                return JsonResponse({'number': "没行情路径"})
+        else:
+            return JsonResponse({'number': "没有e盘"})
+
     #  同花顺陆股通  # 需要改cookie
     if s == "ths_lgt":
         if d_t:
             return JsonResponse({'number': ths_lgt(d_t)})
         return JsonResponse({'number': "缺日期 "})
 
-    # 同花顺公告利好
-    if re_get.get("ths_notice", "") == "ths_notice":
-        open_chrome()
-        number = ths_notice_good(date)
-        # number = ""
-        # print(number)
-        return JsonResponse({'number': number})
+    # 同花顺公告利好 以弃用，
+    # if re_get.get("ths_notice", "") == "ths_notice":
+    #     open_chrome()
+    #     number = ths_notice_good(date)
+    #     # number = ""
+    #     # print(number)
+    #     return JsonResponse({'number': number})
 
-    # 东财公告利好
-    if re_get.get("dc_notice", "") == "dc_notice":
-        number = ths_notice_good(date)
-        # number = ""
-        # print(number)
-        return JsonResponse({'number': number})
+    # 东财公告利好 以弃用，
+    # if re_get.get("dc_notice", "") == "dc_notice":
+    #     number = ths_notice_good(date)
+    #     # number = ""
+    #     # print(number)
+    #     return JsonResponse({'number': number})
 
     # 同花顺涨停或大于5
     if re_get.get("ths_rise", "") == "ths_rise":
@@ -286,7 +305,7 @@ xq_dis = 0
 
 
 # 单个股票详情 vue为前端
-@ratelimit(key='ip', rate='1/10s', block=True)
+@ratelimit(key='ip', rate='2/15s', block=True)
 def stock_details(request):
     global xq_dis  # 雪球讨论取不到是把其置为1，再取一次
     re_get = request.GET
@@ -382,7 +401,7 @@ def stock_details(request):
 
 
 # 东财选股数据 新 vue stock
-@ratelimit(key='ip', rate='1/10s', block=True)
+@ratelimit(key='ip', rate='2/15s', block=True)
 def east_data(request):
     re_get = request.GET
     headers = {
@@ -414,7 +433,7 @@ def east_data(request):
 
 
 # 人工智能
-@ratelimit(key='ip', rate='1/10s', block=True)
+@ratelimit(key='ip', rate='2/15s', block=True)
 def artificial_intelligence(request):
     re_get = request.GET
     df_stocks = pd.read_pickle('data/pickled_ten_year_filtered_data.pkl')
@@ -1079,8 +1098,8 @@ def ten_big_current_share(detail_f):
     ten_share1 = detail_f.get("sdltgd", "")  # 流通股东
     # pprint(ten_share)
     # ten_share = ""
+    ten_share = []
     if ten_share1:
-        ten_share = []
         for i in ten_share1:
             shareholder = i.get("sdltgd", "")
             rq = i.get("rq", "")
@@ -1124,8 +1143,8 @@ def ten_big_current_share(detail_f):
 def institution_position_son(detail_f, code):
     quarter_n = detail_f.get("zlcc_rz", "")
     # print(quarter_n[0:3])
+    lgt = []
     if quarter_n:
-        lgt = []
         for v in quarter_n:
             s = {}
             share_current = [["类型", "家数", "数量", "占流通比", "占总比"]]
@@ -1798,9 +1817,6 @@ def east_lgt_finance(date, page, choice):
                 is_write_stock('lgt.blk', fund_inflow_list, "write")
                 return "陆股通交前" + str(le) + "交后" + str(len(fund_inflow_list))
     elif choice == "east_lgt_number":
-        # if not date:
-        #     date = str(d_date.today())  # 今天
-        #     print(date)
         lgt = requests.get("http://dcfm.eastmoney.com/EM_MutiSvcExpandInterface/api/js/get?type=HSGT20_GGTJ_SUM"
                            "&token=894050c76af8597a853f5b408b759f5d&st=ShareSZ_Chg_One&sr=-1&p=1&ps=" + page +
                            "&json={pages:(tp),data:(x)}&filter=(DateType=%271%27%20and%20HdDate=%27" + date + "%27)"
@@ -2110,19 +2126,78 @@ def east_dragon_tiger(date):
     return ""
 
 
+# 代替上面east_dragon_tiger，读东财龙虎榜 # 净买入 'JmMoney': '63519965.72',涨幅 'Chgradio': '9.98',
+def east_dragon_tiger_new(da):
+    li = east_dragon_tiger_new_son("http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/YYBJXMX/GetYYBJXMX?js=&sortfield=&sortdirec=-1&pageSize=50&pageNum=1&tkn=eastmoney&salesCode=80601499&tdir=&dayNum=&startDateTime={}&endDateTime={}&cfg=yybjymx".format(da, da))
+    ss = len(li)
+    li += east_dragon_tiger_new_son("http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/YYBJXMX/GetYYBJXMX?js=&sortfield=&sortdirec=-1&pageSize=50&pageNum=1&tkn=eastmoney&salesCode=80403915&tdir=&dayNum=&startDateTime={}&endDateTime={}&cfg=yybjymx".format(da, da))
+    sss = len(li) - ss
+    # print(sss)
+    # 读东财龙虎榜 机构
+    organization_dragon_tiger = requests.get("http://data.eastmoney.com/DataCenter_V3/stock2016/DailyStockListStatistics/pagesize=100,page=1,sortRule=-1,sortType=PBuy,startDate=" + da + ",endDate=" + da + ",gpfw=0,js=.html?rt=26985157")
+    # print(organization_dragon_tiger)
+    if organization_dragon_tiger and organization_dragon_tiger.status_code == 200:
+        dragon_tiger_list2 = {}
+        for item in organization_dragon_tiger.json().get('data', ''):
+            if isfloat(item.get('PBuy', '0')) > 10000000:
+                code = code_add(item.get('SCode', ''))
+                dragon_tiger_list2[code + '\n'] = float(item.get('PBuy', '0'))
+        dragon_tiger_list2['1' + da + '\n'] = 0  # 最后加日期，给页面打开龙虎榜用
+        tiger_list2 = dict(sorted(dragon_tiger_list2.items(), key=lambda x: x[1], reverse=True)).keys()
+        tiger_list2 = list(tiger_list2)
+        # print(tiger_list2)
+        # print(len(tiger_list2) - 1)
+        i = 0
+        for each in tiger_list2:
+            if each not in li:
+                li.append(each)
+                i += 1
+    is_write_stock('DRAGON_TIGER.blk', li, "write")
+    return str(len(li)-1) + "沪" + ss + "深" + sss + "机" + str(len(tiger_list2) - 1) + "独机" + str(i-1)
+
+
+# 读东财陆股通龙虎榜
+def east_dragon_tiger_new_son(net):
+    dragon_tiger = requests.get(net)
+    # print(dragon_tiger)
+    # print(da)
+    if dragon_tiger.status_code == 200 and dragon_tiger:
+        dr = dragon_tiger.json().get('Data', '')
+        if dr:
+            dd = dr[0].get('Data', '')
+            dragon_tiger_list = {}
+            for item in dd:
+                ii = item.split("|")
+                # print(ii[17])
+                # print(ii[10])
+                if isfloat(ii[17]) > 10000000:
+                    code = code_add(ii[10])
+                    # print(code)
+                    dragon_tiger_list[code + '\n'] = float(ii[17])
+            # print(dragon_tiger_list)
+            # 返回的是list 按字典集合中，每一个元组的第二个元素排列。
+            tiger_list = dict(sorted(dragon_tiger_list.items(), key=lambda x: x[1], reverse=True)).keys()
+            tiger_list = list(tiger_list)
+            print(tiger_list)
+            print("陆股通龙虎榜", len(tiger_list))
+            return tiger_list
+    print("陆股通龙虎榜为空")
+    return []
+
+
 # 同花顺资金流入, 资金净买入大于10万; 涨幅大于1%
-def ths_fund_inflow(date, search, number, choice):
-    cookie = get_cookie()
+def ths_fund_inflow(search, number, choice):
     headers = {
         "Cookie": "chat_bot_session_id=7bcebb62fb52a2de11bf41ec05073886; "
                   "other_uid=Ths_iwencai_Xuangu_dz8du2owtuaf0fcmkdy2h8ewto46jpsh; "
                   "cid=b39c75faa8d86f5eee3a5502e26c76f81617695835; "
-                  "v=" + cookie,
+                  "v=" + get_cookie(),
         "Connection": "keep-alive",
         "User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.67 Safari/537.36"
     }
+    print(search)
     ths_data = {
-        'question': date + search,
+        'question': search,
         'perpage': number,
         'page': '1',
         'log_info': '{"input_type":"typewrite"}',
@@ -2280,6 +2355,7 @@ def ths_rise(date, up_rise):
 
 # 同花顺选股 1为写入通达信
 def ths_choice(ths_in, t="1", f="ths_choice.blk"):
+    # print(ths_in)
     cookie = get_cookie()
     headers = {
         "Cookie": "chat_bot_session_id=7bcebb62fb52a2de11bf41ec05073886; "
@@ -2300,7 +2376,10 @@ def ths_choice(ths_in, t="1", f="ths_choice.blk"):
     }
     lgt = requests.post("http://x.10jqka.com.cn/unifiedwap/unified-wap/v2/result/get-robot-data", headers=headers,
                         data=ths_data)
-    if lgt.status_code == 200:
+    sleep(2)
+    if lgt.status_code == 200 and lgt:
+        print("lgt.json()", lgt)
+        print("lgt.json()", lgt.json())
         lgt_data = lgt.json().get('data', '').get('answer', '')[0].get('txt', '')[0].get('content', '') \
             .get('components', '')[0].get('data', '').get('datas', '')
         # print(lgt_data)
@@ -2313,6 +2392,7 @@ def ths_choice(ths_in, t="1", f="ths_choice.blk"):
                     lgt_list.append(item.get('code', ''))
             if t == "1":
                 is_write_stock(f, lgt_list, "write")
+            print(ths_in, len(lgt_list))
             return lgt_list
     return ""
 
@@ -2797,7 +2877,7 @@ def code_add(code, param=""):
     return code
 
 
-# code加(sh or sz) or (SZ or SH)
+# big="baostock"加(sh. or sz.)code加(sh or sz) or (SZ or SH)
 def add_sh(code, big=""):
     if big == "":
         if code.startswith("0") or code.startswith("3") or code.startswith("2"):
@@ -2805,14 +2885,21 @@ def add_sh(code, big=""):
         elif code.startswith("5") or code.startswith("6") or code.startswith("9"):
             code = "sh" + code
         else:
-            code = "sz" + code
+            print(code)
+    elif big == "baostock":
+        if code.startswith("0") or code.startswith("3") or code.startswith("2"):
+            code = "sz." + code
+        elif code.startswith("5") or code.startswith("6") or code.startswith("9"):
+            code = "sh." + code
+        else:
+            print(code)
     else:
         if code.startswith("0") or code.startswith("3") or code.startswith("2"):
             code = "SZ" + code
         elif code.startswith("5") or code.startswith("6") or code.startswith("9"):
             code = "SH" + code
         else:
-            code = "SZ" + code
+            print(code)
     return code
 
 

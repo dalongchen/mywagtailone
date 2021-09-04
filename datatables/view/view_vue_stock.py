@@ -32,12 +32,10 @@ def good_notice_parent(headers, start):
     with open(r"D:\ana\envs\py36\mywagtailone\datatables\static\store.txt", "w") as f:  # 自动关闭
         f.writelines(w)
     p = views.is_not_path("GOOD_NOTICE.blk")
+    cc = list(set(c))
+    cc.sort(key=c.index)
     with open(p, "w") as f:  # 自动关闭
-        f.writelines(c)
-    # print("oi", dc_notice_go)
-    # print("oi", d)
-    # print("oi", w)
-    # print("oi", c)
+        f.writelines(cc)
     return d
 
 
@@ -62,7 +60,7 @@ def dc_notice_good(headers, url, start, re):
                 print("break date", ii)
                 break
             ths_lis += views.ths_choice("预告日期为{}日；公告业绩预减或预亏".format(str(ii)[0:10]), t="2")
-            sleep(3)
+            sleep(15)
         print("ths_lis22", len(ths_lis))
     # 公告日，类型，标题
     for i in range(1, 8):
@@ -114,20 +112,29 @@ def dc_notice_good(headers, url, start, re):
                                 t = v.get("title", "")
                                 c = v.get("codes", "")
                                 for cc in c:
-                                    if cc.get("ann_type").find("A,") != -1:
+                                    if cc.get("ann_type").find("A") != -1:
                                         st = cc.get("stock_code", "")
                                 lg = {"notice_date": notice_date, "dis_time": dis_time, "col_type": col_type, "title": t}
                                 if re == "回购":
                                     if t.find("注销部分") == -1:
                                         lgt.append(lg)
-                                        stock_code.append(views.code_add(st + "\n"))
+                                        if st:
+                                            stock_code.append(views.code_add(st + "\n"))
+                                        else:
+                                            print("st代码有误", c)
                                 elif re == "业绩":
                                     if st not in ths_lis:
                                         lgt.append(lg)
-                                        stock_code.append(views.code_add(st + "\n"))
+                                        if st:
+                                            stock_code.append(views.code_add(st + "\n"))
+                                        else:
+                                            print("st代码有误", c)
                                 else:
                                     lgt.append(lg)
-                                    stock_code.append(views.code_add(st + "\n"))
+                                    if st:
+                                        stock_code.append(views.code_add(st + "\n"))
+                                    else:
+                                        print("st代码有误", c)
     print(n, "条公告")
     return {"lgt": lgt, "new_date": new_date, "stock_code": stock_code}
 

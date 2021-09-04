@@ -1,6 +1,6 @@
 <template>
   <el-container>
-    <el-header style="height: 160px; border: 1px solid #eee">
+    <el-header style="height: 170px; border: 1px solid #eee">
       <el-row  class="row-bg" >
         <el-col :span="4">
             <el-button round @click="choice_stock('research_report')" :disabled="f">
@@ -34,7 +34,7 @@
         </el-col>
         <el-col :span="3">
             <el-button round @click="choice_stock('open_dragon')" :disabled="ff">
-              打开龙虎榜
+              {{open_dragon}}
             </el-button>
         </el-col>
         <el-col :span="4">
@@ -70,6 +70,11 @@
         <el-col :span="3">
             <el-button round @click="send_text('ths_lgt02')" :disabled="f">
               {{ths_lgt02}}
+            </el-button>
+        </el-col>
+        <el-col :span="3">
+            <el-button round @click="choice_stock('backup')" :disabled="f">
+              {{backup}}
             </el-button>
         </el-col>
       </el-row>
@@ -118,8 +123,9 @@ export default defineComponent({
       east_lgt_number:"陆股通数量",
       east_finance_number:"融资融券数量",
       combine:"并集和交集",
-      ths_fund_inflow0:"流入大10和大2500",
+      ths_fund_inflow0:"流入大10和大5000",
       east_dragon:"龙虎榜",
+      open_dragon:"打开龙虎榜",
       east_lgt:"东财陆股通",
       ths_lgt:"同花顺陆股通",
       east_finance_sh:"上海两融",
@@ -127,6 +133,7 @@ export default defineComponent({
       shown_choice:"写入雪球和自选",
       pre_paid:"5:30后预买",
       ths_lgt02:"陆股通大于0.2",
+      backup:"备份",
       good_notice:"公告利好",
     };
   },
@@ -205,9 +212,12 @@ export default defineComponent({
       }else if (d == "combine") {
         this.combine = "工作中约1秒";
       }else if (d == "ths_fund_inflow0") {
-        this.ths_fund_inflow0 = "工作中约30秒";
+        this.ths_fund_inflow0 = "工作中约60秒";
       }else if (d == "east_dragon") {
-        this.east_dragon = "工作中约30秒";
+        this.east_dragon = "工作中约20秒";
+      }else if (d == "open_dragon") {
+        this.open_dragon = "工作中约60秒";
+        this.ff = true;
       }else if (d == "east_lgt") {
         this.east_lgt = "工作中约30秒";
       }else if (d == "ths_lgt") {
@@ -220,6 +230,8 @@ export default defineComponent({
         this.shown_choice = "工作中约30秒";
       }else if (d == "pre_paid") {
         this.pre_paid = "工作中约60秒";
+      }else if (d == "backup") {
+        this.backup = "工作中约60秒";
       }
       // console.log(d);
       if (this.msgSon != ""){
@@ -246,18 +258,17 @@ export default defineComponent({
         }else if (d == "east_dragon") {
           this.east_dragon = r;
         }else if (d == "open_dragon") {
-          this.ff = true;
           let dd = r.pop()
           for (let code of r) {
             window.open("http://data.eastmoney.com/stock/lhb," + dd + "," + code + ".html");
-            // console.log("http://data.eastmoney.com/stock/lhb," + d + "," + code + ".html");
-            let exitTime = new Date().getTime() + 1500;
+            let exitTime = new Date().getTime() + 1000;
             let t = new Date().getTime();
             while (t < exitTime) { // sleep 1 秒
               t = new Date().getTime()
             }
           }
-          // this.ff = false;
+          this.ff = false;
+          this.open_dragon = "打开龙虎榜"
         }else if (d == "east_lgt") {
           this.east_lgt = r;
         }else if (d == "ths_lgt") {
@@ -270,9 +281,42 @@ export default defineComponent({
           this.shown_choice = r;
         }else if (d == "pre_paid") {
           this.pre_paid = r;
+        }else if (d == "backup") {
+          this.backup = r;
         }
         this.f = false;
       }).catch(error => {
+        let rr = "error"
+        // console.log(response.data.number);
+        if (d == "research_report"){
+          this.research_report = rr;
+        }else if (d == "east_lgt_number") {
+          this.east_lgt_number = rr;
+        }else if (d == "east_finance_number") {
+          this.east_finance_number = rr;
+        }else if (d == "combine") {
+          this.combine = rr;
+        }else if (d == "ths_fund_inflow0") {
+          this.ths_fund_inflow0 = rr;
+        }else if (d == "east_dragon") {
+          this.east_dragon = rr;
+        }else if (d == "open_dragon") {
+          this.open_dragon = rr;
+        }else if (d == "east_lgt") {
+          this.east_lgt = rr;
+        }else if (d == "ths_lgt") {
+          this.ths_lgt = rr;
+        }else if (d == "east_finance_sh") {
+          this.east_finance_sh = rr;
+        }else if (d == "east_finance_sz") {
+          this.east_finance_sz = rr;
+        }else if (d == "shown_choice") {
+          this.shown_choice = rr;
+        }else if (d == "pre_paid") {
+          this.pre_paid = rr;
+        }else if (d == "backup") {
+          this.backup = rr;
+        }
         this.f = false;
         this.ff = false;
         console.log(error);
