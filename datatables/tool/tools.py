@@ -124,3 +124,55 @@ def create_zip(file_path, save_path, note=""):
         new_zip.write(tar, tar[len(file_path):])  # tar为写入的文件，tar[len(filePath)]为保存的文件名
     new_zip.close()
 
+
+# 判断返回那一天
+def get_date():
+    from chinese_calendar import is_workday
+    now = datetime.datetime.now()
+    my_date = now.date()
+    iss = is_workday(my_date)
+    if not iss:
+        my_da = (now + datetime.timedelta(-1)).date()
+        iss = is_workday(my_da)
+        i = 2
+        while not iss:
+            my_da = (now + datetime.timedelta(-i)).date()
+            iss = is_workday(my_da)
+            i += 1
+        return my_da
+    elif iss and (15 >= now.hour >= 0):  # 交易日且15点前取昨天
+        my_da = (now + datetime.timedelta(-1)).date()
+        iss = is_workday(my_da)
+        # print(not iss)
+        i = 2
+        while not iss:
+            my_da = (now + datetime.timedelta(-i)).date()
+            iss = is_workday(my_da)
+            i += 1
+        return my_da
+    else:
+        return my_date
+
+
+# 传入路径，读取csv数据,
+def read_data():
+    from ..tool import mysetting
+    # ss = os.path.isfile(mysetting.TRADE_CACHE_PATH)
+    # d_trade = ['600163', '002774', '002797', '600011', '002202', '002326', '000683', '300891', '601800']
+    # pd_csv = pd.read_csv(mysetting.TRADE_CACHE_PATH, header=0).to_dict()
+    pd_csv = pd.read_csv(mysetting.TRADE_CACHE_PATH, dtype={'xd_2102': object}).to_dict(orient='records')
+    # pd_csv = pd.read_csv(mysetting.TRADE_CACHE_PATH, dtype={'xd_2102': object})
+    # pprint(ss)
+    # df_li = list(pd_csv.xd_2102.values)
+    # for i in df_li:
+    #     print(i)
+    # if d_trade == df_li:
+    #     print("dd")
+    # else:
+    #     pass
+    # df['da'] = pd.to_datetime(df.xd_2102, format='%Y-%m-%d')
+    return ""
+
+
+
+

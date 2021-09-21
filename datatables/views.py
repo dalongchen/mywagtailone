@@ -432,6 +432,186 @@ def east_data(request):
     return JsonResponse("")
 
 
+# 独立交易
+@ratelimit(key='ip', rate='5/15s', block=True)
+def easy_trade(request):
+    re_get = request.GET
+    s = re_get.get("s", "")
+    # 预埋单
+    if s == "pre_paid":
+        stock_trade = []
+        # 读取choice板块买入
+        with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
+            # conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
+            cu = conn.cursor()
+            for ii in ["choice.blk", "choice_sell.blk"]:
+                stock_list = read_choice_code(ii)
+                if stock_list:
+                    if ii == "choice.blk":
+                        buy = "买入"
+                    else:
+                        buy = "卖出"
+                    for item in stock_list:  # 获取交易数据
+                        # print(item)
+                        # print(item[3:])
+                        if item.startswith("sz"):
+                            xd_2106 = mysetting.HOLDER_CODE[0][0]
+                            xd_2108 = mysetting.HOLDER_CODE[0][1]
+                        elif item.startswith("sh"):
+                            xd_2106 = mysetting.HOLDER_CODE[1][0]
+                            xd_2108 = mysetting.HOLDER_CODE[1][1]
+                        else:
+                            print(item, "error")
+                            xd_2106 = ""
+                            xd_2108 = ""
+                        cu.execute("select xd_2102,xd_2103,xd_2127 FROM ymd_1280194006 where xd_2102='{}'".format(item[3:]))
+                        for t in cu:
+                            # print(t[1])
+                            # print(t[1].decode(encoding='utf8'))
+                            stock_trade.append({
+                                "xd_2102": t[0],
+                                "xd_2103": t[1],
+                                "xd_2106": xd_2106,
+                                "xd_2109": buy,
+                                "xd_2127": t[2],
+                                "xd_2126": 100,
+                                "xd_2108": xd_2108,
+                            })
+
+            #     # log_on_ht()  # 登录海通
+            cu.close()
+        if stock_trade:
+            with sqlite3.connect(mysetting.TRADE_PATH) as conn:
+                # conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
+                cu = conn.cursor()
+                cu.execute("delete from ymd_1280194006")
+                for t in stock_trade:
+                    # print(t)
+                    cu.execute(
+                        "INSERT INTO ymd_1280194006 (xd_2102,xd_2103,xd_2106,xd_2109,xd_2127,xd_2126,xd_2108) VALUES(?,?,?,?,?,?,?)",
+                        (
+                            t["xd_2102"],
+                            t["xd_2103"].decode(encoding='utf8').encode(encoding='gbk'),
+                            t["xd_2106"],
+                            t["xd_2109"].encode(encoding='gbk'),
+                            t["xd_2127"],
+                            t["xd_2126"],
+                            t["xd_2108"].encode(encoding='gbk')
+                        )
+                    )
+                cu.close()
+        return JsonResponse({'pre_paid': []})
+
+    # 显示并修改预埋单
+    if s == "show_pre":
+        # is_not_path判断路径是否存在并返回路径
+        with sqlite3.connect(is_not_path("data/ymddata.db", path_list=mysetting.JY_URL, flag="3")) as conn:
+            conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
+            cu = conn.cursor()
+            # xd_2108为深圳a股，省略
+            cu.execute("select xd_2102,xd_2103,xd_2106,xd_2109,xd_2127,xd_2126,xd_2105 FROM ymd_1280194006")
+            # cu.execute("select xd_2102,xd_2103,xd_2106,xd_2109,xd_2127,xd_2126,xd_2108,xd_2105 FROM ymd_1280194006")
+            columns = [_[0].lower() for _ in cu.description]
+            results = [dict(zip(columns, _)) for _ in cu]
+            cu.close()
+        if os.path.isfile(mysetting.DATA_TABLE_DB):  # 查收盘价
+            with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
+                conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
+                cu = conn.cursor()
+                for ii in results:
+                    # print(ii['xd_2105'])
+                    # print(ii['xd_2105'] is None)
+                    # print(ii['xd_2105'] is not None)
+                    # if ii['xd_2103']:
+                    #     print(ii['xd_2103'])
+                        # ii['xd_2103'] = ii['xd_2103'].decode(encoding="gbk")
+                    # if ii['xd_2108']:
+                    #     print(ii['xd_2108'])
+                    #     ii['xd_2108'] = ii['xd_2108'].decode(encoding="gbk")
+                    if ii['xd_2109']:
+                        if isinstance(ii['xd_2109'], bytes):
+                            # print(ii['xd_2109'])
+                            ii['xd_2109'] = ii['xd_2109'].decode(encoding="gbk")
+                    if ii['xd_2105'] is None:
+                        ii['xd_2105'] = ""
+                    # if ii['xd_2105']:
+                    #     print(ii['xd_2105'])
+                        # ii['xd_2105'] = ii['xd_2105'].decode(encoding="gbk")
+                    if "发送成功" in ii['xd_2105']:
+                        ii['xd_2105'] = "已发送"
+                    if ii['xd_2126'] and ii['xd_2127']:
+                        ii['sum'] = '%.2f' % (float(ii['xd_2126']) * float(ii['xd_2127']))
+                    if ii["xd_2102"]:
+                        cu.execute("select da,xd_2127 FROM ymd_1280194006 where xd_2102='{}'".format(ii["xd_2102"]))
+                        for tt in cu:
+                            # print(len(tt))
+                            if tt[1]:
+                                ii["da"] = tt[0]
+                                ii["close"] = tt[1]
+                            else:
+                                stock_dict = insert_close([ii["xd_2102"]])
+                                for dd in stock_dict:
+                                    ii["da"] = dd["da"]
+                                    ii["close"] = dd["xd_2127"]
+                # pprint(results)
+                cu.close()
+        return JsonResponse({'show_pre': results})
+
+    # 备份买卖收盘价
+    if s == "backup_close":
+        stock_list = []
+        for ii in ["choice.blk", "choice_sell.blk"]:
+            stock_list += read_choice_code(ii, pure="pure")
+        if stock_list:
+            trade_date = tools.get_date()  # 获取那一天数据
+            # pd_csv = pd.read_csv(mysetting.STOCK_CLOSE_CACHE, dtype={'xd_2102': object}).to_dict(orient='records')
+            if os.path.isfile(mysetting.DATA_TABLE_DB):
+                with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
+                    # conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
+                    cu = conn.cursor()
+                    cu.execute("delete FROM ymd_1280194006 WHERE da!='{}'".format(str(trade_date)))
+                    cu.execute("select xd_2102 FROM ymd_1280194006")
+                    # columns = [_[0].lower() for _ in cu.description]
+                    # results = [dict(zip(columns, _)) for _ in cu]
+                    results = [_[0] for _ in cu]
+                    cu.close()
+                if results:
+                    ret = [i for i in stock_list if i not in results]  # 从stock_list去除results中也有的元素
+                    # pprint(ret)
+                    if ret:
+                        insert_close(ret)
+                else:
+                    insert_close(stock_list)
+            else:
+                insert_close(stock_list)
+        return JsonResponse({})
+
+    # 预买增删改
+    if s == "edit" or s == "delete":
+        dd = re_get.get("d", "")
+        print(s)
+        print(dd)
+        if dd:
+            dd = json.loads(dd)
+            if os.path.isfile(mysetting.TRADE_PATH):
+                with sqlite3.connect(mysetting.TRADE_PATH) as conn:
+                    # conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
+                    cu = conn.cursor()
+                    for d in dd:
+                        if d:
+                            if s == "delete":
+                                cu.execute("delete FROM ymd_1280194006 WHERE xd_2102='{}'".format(d["xd_2102"]))
+                            if s == "edit":
+                                d["xd_2109"] = d["xd_2109"].encode(encoding='gbk')
+                                sql = "update ymd_1280194006 SET xd_2109 = ?, xd_2127= ?, xd_2126= ? WHERE xd_2102= ?"
+                                cu.execute(sql, (d["xd_2109"], d["xd_2127"], d["xd_2126"], d["xd_2102"]))
+                    # columns = [_[0].lower() for _ in cu.description]
+                    # results = [dict(zip(columns, _)) for _ in cu]
+                    # results = [_[0] for _ in cu]
+                    cu.close()
+        return JsonResponse({})
+
+
 # 人工智能
 @ratelimit(key='ip', rate='2/15s', block=True)
 def artificial_intelligence(request):
@@ -444,39 +624,117 @@ def artificial_intelligence(request):
     return JsonResponse({"number": "ok"})
 
 
-# 网易 历史行情
+#  插入收盘价
+def insert_close(stock_list):
+    for i, v in enumerate(stock_list):
+        if v.startswith("6"):
+            v = "sh." + v
+        else:
+            v = "sz." + v
+        stock_list[i] = v
+    print("插入收盘价", stock_list)
+    stock_dict = get_stock_close(stock_list)  # 获取交易数据
+    if stock_dict:
+        with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
+            # conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
+            cu = conn.cursor()
+            # cu.execute("delete FROM ymd_1280194006 WHERE da!='{}'".format(str(trade_date)))
+            for t in stock_dict:
+                cu.execute(
+                    "INSERT INTO ymd_1280194006 (da,xd_2102,xd_2103,xd_2127) VALUES(?,?,?,?)",
+                    # "INSERT INTO ymd_1280194006 (dat,xd_2102,xd_2103,xd_2106,xd_2109,xd_2127,xd_2126,xd_2108,xd_2105,xd_3630) VALUES(?,?,?,?,?,?,?,?,?,?)",
+                    (
+                        t["da"],
+                        t["xd_2102"],
+                        t["xd_2103"].encode(encoding='utf8'),
+                        # t["xd_2106"],
+                        # t["xd_2109"].encode(encoding='gbk'),
+                        t["xd_2127"],
+                        # t["xd_2126"],
+                        # t["xd_2108"].encode(encoding='gbk'),
+                        # t["xd_2105"],
+                        # t["xd_3630"],
+                    )
+                )
+            cu.close()
+    return stock_dict
+
+
+# 获取收盘价
+def get_stock_close(stock_list):
+    from .view import easy_trade
+    d_now = datetime.now()
+    iss = is_workday(d_now.date())
+    if iss and (15 >= d_now.hour >= 9):  # 交易日9-15时段去调bookstock行情
+        # 取昨天(d_now + timedelta(-1)).date()
+        stock_dict = easy_trade.inquiry_close(stock_list, str((d_now + timedelta(-1)).date()))
+    else:
+        stock_dict = get_xin_lan(stock_list)  # 循环获取新浪行情构建数据
+
+    print("get_trade_data", stock_dict)
+    return stock_dict
+
+
+# 循环获取新浪行情构建数据
+def get_xin_lan(stock_list):
+    stock = []
+    for item in stock_list:
+        st = {}
+        d = sina_real_time(item[3:])  # 从新浪获取收盘价
+        sleep(1)
+        if d:
+            # print(d[3])
+            st["da"] = d[0]  # 日期
+            st["xd_2102"] = item[3:]  # 代码 000001
+            st["xd_2103"] = d[2]  # 名称
+            st["xd_2127"] = d[3]  # 收盘价
+            stock.append(st)
+        else:
+            print("有误", item)
+    if not stock:
+        print("stock数据为空")
+    return stock
+
+
+# 网易 作废，更新不及时，历史行情 0代表sh,0 000300=sh000300为上海指数 1代表sz。1000300=sz000300为深圳股票
 def w163_history(code):
     code = code_add(code, param="param")
     print(code, "poy")
-    v = requests.get( "http://quotes.money.163.com/service/chddata.html?code={}&start={}&end={}&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP".format(code, "20210506", "20210506"))
-    text = v.text
-    # 日期 代码 名称 收盘价 最高价	最低价	开盘价 前收盘 涨跌额 涨跌幅	换手率	成交量 成交金额 总市值	流通市值 成交笔数
-    #  TCLOSE收盘价 ;HIGH最高价;LOW最低价;TOPEN开盘价;LCLOSE前收盘价;CHG涨跌额;PCHG涨跌幅;TURNOVER换手率;VOTURNOVER成交量;VATURNOVER成交金额;TCAP总市值;MCAP流通市值
-    if v.status_code == 200 and text:
-        try:
-            t = text.split("\r")[1].split(",")
-            # print(t[3], t[9])
-            # print(t[10], t[12])
-            # print(t[13], t[14])
-            # print(t, "piu")
-            return {
-                "date": t[0].strip(),
-                "name": t[2],
-                "close": t[3],
-                "up": t[9],
-                "turnover": t[10],
-                "va": t[12],
-                "total": t[13],
-                "circulate": t[14]
-            }
-        except:
-            print("没有数据")
-            return ""
+    # v = requests.get( "http://quotes.money.163.com/service/chddata.html?code={}&start={}&end={}&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP".format(code, "20210506", "20210506"))
+    # 能用的原始请求，留着
+    # 日期, 股票代码, 名称, 收盘价, 最高价, 最低价, 开盘价, 前收盘, 涨跌额, 涨跌幅, 换手率, 成交量, 成交金额, 总市值, 流通市值, 成交笔数
+    # 2015 - 09 - 11, '000001,上证指数,3200.234,3223.762,3163.449,3189.479,3197.893,2.341,0.0732,,224557822,2.52769467178e+11,,,None
+    # 2015 - 09 - 10, '000001,上证指数,3197.893,3243.281,3178.904,3190.553,3243.089,-45.196,-1.3936,,273261759,2.99581090523e+11,,,None
+    v = requests.get("http://quotes.money.163.com/service/chddata.html?code=1301040&start=20210901&end=20210904")
+    if v.status_code == 200:
+        text = v.text
+        print(text)
+        if text:
+            try:
+                t = text.split("\r")[1].split(",")
+                # print(t[3], t[9])
+                # print(t[10], t[12])
+                # print(t[13], t[14])
+                # print(t, "piu")
+                return {
+                    "date": t[0].strip(),
+                    "name": t[2],
+                    "close": t[3],
+                    "up": t[9],
+                    "turnover": t[10],
+                    "va": t[12],
+                    "total": t[13],
+                    "circulate": t[14]
+                }
+            except:
+                print("没有数据")
+                return ""
     return ""
 
 
-# one 新浪即时行情 # 75.730,75.400,79.000,现价 79.480, 75.500, 79.000, 79.010, 3197647,总量 250231897.790,成交金额 2021-05-31,15:00:00,
-def sina_real_time(code):  # 日期，时间 名字，现价，成交量，成交金额，
+# one 新浪即时行情
+# 75.730,75.400,79.000,现价 79.480, 75.500, 79.000, 79.010, 3197647,总量 250231897.790,成交金额 2021-05-31,15:00:00,
+def sina_real_time(code):
     # add_sh(code)
     vv = requests.get("http://hq.sinajs.cn/list={}".format(add_sh(code)))
     text = vv.text
@@ -486,15 +744,8 @@ def sina_real_time(code):  # 日期，时间 名字，现价，成交量，成�
             detail[8] = '{:.2f}亿'.format(float(detail[8]) / 100000000)
         if detail[9]:
             detail[9] = '{:.2f}亿'.format(float(detail[9]) / 100000000)
+        # 日期，时间 名字，现价，成交量，成交金额，
         return [detail[30], detail[31], detail[0], detail[3], detail[8], detail[9]]
-        # return {
-        #     "name": detail[0],
-        #     "now_price": detail[3],
-        #     "now_vo": detail[8],
-        #     "now_va": detail[9],
-        #     "d_date": detail[-3],
-        #     "timely": detail[-2],
-        # }
     return ""
 
 
@@ -2153,7 +2404,7 @@ def east_dragon_tiger_new(da):
                 li.append(each)
                 i += 1
     is_write_stock('DRAGON_TIGER.blk', li, "write")
-    return str(len(li)-1) + "沪" + ss + "深" + sss + "机" + str(len(tiger_list2) - 1) + "独机" + str(i-1)
+    return str(len(li)-1) + "沪" + str(sss) + "深" + str(ss) + "机" + str(len(tiger_list2) - 1) + "独机" + str(i-1)
 
 
 # 读东财陆股通龙虎榜
@@ -2611,14 +2862,6 @@ def pre_paid(stock_dict, dialog="", t="interface"):
                         t["xd_3630"],
                     )
                     )
-            # data = cu.execute("SELECT * FROM ymd_1280194006").fetchall()
-            # # print(len(data))
-            # if data:
-            #     cookie_xq = ""
-            #     for result in data:
-            #         print(result)
-            #         if result:
-            #             pass
 
 
 # 查询当天收盘价并构建数据给交易软件。5.30后  f == "2"查询收盘价和名字
@@ -2766,17 +3009,18 @@ def add_linefeed(data):
     return data
 
 
-# 读取choice板块，获取code
-def read_choice_code(file):
+# 读取choice板块，获取code, pure有值时生成素代码
+def read_choice_code(file, pure=""):
     stock_list = read_file(file)
     # print(stock_list)
     if len(stock_list):
         for i, value in enumerate(stock_list):
             v = value.strip()[1:]
-            if v.startswith("6"):
-                v = "sh." + v
-            else:
-                v = "sz." + v
+            if not pure:
+                if v.startswith("6"):
+                    v = "sh." + v
+                else:
+                    v = "sz." + v
             stock_list[i] = v
     # print(stock_list)
     return stock_list

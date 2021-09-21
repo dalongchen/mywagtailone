@@ -1,3 +1,5 @@
+git push origin master
+
 git rm --cached app.iml 从版本库中移除文件，working dicrectory中仍然保留，
 如果要删除目录下所有文件包括子目录中的 git rm -r --cached directory_name 最后是提交和push
 

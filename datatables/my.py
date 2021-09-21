@@ -1,25 +1,7 @@
-
+from mywagtailone.datatables import main_test
 if __name__ == "__main__":
-    def test():
-        import numpy as np
-        last = [[0.7845765], [0.74676596]]
-        x_data = np.array([last])
-        # print(x_data)
-        x_data = np.reshape(x_data, (x_data.shape[0], 2, 1))
-        predicted_price = []
-        for i in range(0, 3):
-            print("uuuuuuu")
-            print(x_data)
-            predicted_stock_price = [[0.2222351]]
-            predicted_price += predicted_stock_price[0]
-            last += predicted_stock_price
-            last = last[1:]
-            print("ggh", last)
-            x_data = np.array([last])
-            print(x_data)
-            x_data = np.reshape(x_data, (x_data.shape[0], 2, 1))
-            print(x_data)
-        print(predicted_price)
+    # main_test.test_sq_lite()
+    main_test.test_my()
 
     def stock_robot_test(p):
         import numpy as np
@@ -787,9 +769,10 @@ if __name__ == "__main__":
             plt.title('Figure 5: ARIMA model on GS stock')
             plt.legend()
             plt.show()
+
     # stock_robot_test(r'D:\my2\my_test\history_A_stock_k_data.csv')
     # stock_robot_lstm(r'D:\my2\my_test\history_A_stock_k_data.csv')
     # stock_robot_simple_rnn(r'D:\my2\my_test\history_A_stock_k_data.csv')
     # test()
-    deep_learn(r'D:\my2\my_test\history_A_stock_k_data.csv')
+    # deep_learn(r'D:\my2\my_test\history_A_stock_k_data.csv')
 

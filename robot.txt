@@ -1,3 +1,6 @@
+df = pd.read_csv(p, dtype={'xd_2102': object}) 指定某列为字符串
+pd_csv = pd.read_csv(mysetting.TRADE_CACHE_PATH).to_dict(orient='records')读出为字典格式
+
 (5,60,1) 5维60行*1列的数组
 
 即 fit_transform 是 fit 和 transform 的组合，整个过程既包括了训练又包含了转换
