@@ -1,3 +1,8 @@
+git add -A .来一次添加所有改变的文件
+git add . 和 git add * 区别
+git add . 会把本地所有untrack的文件都加入暂存区，并且会根据.gitignore做过滤，但是git add * 会忽略.gitignore把任何文件都加入
+git commit -m "wrote a readme file"
+git status //查看仓库当前的状态
 git push origin master
 
 git rm --cached app.iml 从版本库中移除文件，working dicrectory中仍然保留，
@@ -11,9 +16,6 @@ untracked 状态
 git checkout HashMap.c --ours 表示冲突的地方采用A分支上的修改,丢弃B分支上的修改.
 git checkout HashMap.c --theirs 表示冲突的地方采用B分支上的修改,丢弃A分支上的修改.
 解决完冲突后,就可以像往常一样 git add git commit了.
-
-git commit -m "wrote a readme file"
-git status //查看仓库当前的状态
 
 git diff readme.txtn
 git push origin master
@@ -58,11 +60,6 @@ git pull origin master
 3、然后我们把dev分支的代码合并到master上
 git  merge dev
 
-
-git add -A .来一次添加所有改变的文件
-
-git add . 和 git add * 区别
-git add . 会把本地所有untrack的文件都加入暂存区，并且会根据.gitignore做过滤，但是git add * 会忽略.gitignore把任何文件都加入
 
 git fetch origin master:temp
 这句命令的意思是从远程的origin master分支现在到repository中的 temp分支，即这种方式为在本地新建一个temp分支保存远程的更新
