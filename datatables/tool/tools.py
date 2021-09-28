@@ -99,30 +99,23 @@ def history_k_data(code="sh.000001", start_date='2021-07-01', end_date='2021-07-
     bs.logout()
 
 
-# 压缩和备份
-def create_zip(file_path, save_path, note=""):
+# 压缩
+def create_zip(start_dir, tagger, f="local"):
     import zipfile
-    '''
-    将文件夹下的文件保存到zip文件中。
-    :param filePath: 待备份文件
-    :param savePath: 备份路径
-    :param note: 备份文件说明
-    :return:
-    '''
-    file_list = []
-    if note:
-        target = save_path + os.sep + note + '.zip'
+    import os
+    if f == "local":
+        file_news = start_dir +".zip"  # 压缩后文件夹的名字
     else:
-        target = save_path + os.sep + time.strftime('%Y%m%d') + "_" + time.strftime('%H%M%S') + '.zip'
-    # print(target)
-    new_zip = zipfile.ZipFile(target, 'w')
-    for dir_path, dir_names, file_names in os.walk(file_path):
-        for file_name in file_names:
-            file_list.append(os.path.join(dir_path, file_name))
-    # pprint(file_list)
-    for tar in file_list:
-        new_zip.write(tar, tar[len(file_path):])  # tar为写入的文件，tar[len(filePath)]为保存的文件名
-    new_zip.close()
+        file_news = tagger +".zip"  # 压缩后文件夹的名字
+    print(file_news)
+    z = zipfile.ZipFile(file_news, 'w', zipfile.ZIP_DEFLATED)  # 参数一：文件夹名
+    for dirpath, dirnames, filenames in os.walk(start_dir):
+        fpath = dirpath.replace(start_dir, '')  # 把start_dir代替为空
+        fpath = fpath and fpath + os.sep or ''  # 这句话理解我也点郁闷，实现当前文件夹以及包含的所有文件的压缩
+        for filename in filenames:
+            z.write(os.path.join(dirpath, filename), fpath+filename)
+    print('压缩成功')
+    z.close()
 
 
 # 判断返回那一天
@@ -152,6 +145,61 @@ def get_date():
         return my_da
     else:
         return my_date
+
+
+# 如果当天为交易日则返回否则返回两周内最近一个交易日
+def get_late_trade_day(d_now):
+    from chinese_calendar import is_workday
+    timedelta = datetime.timedelta
+    week_day = d_now.date().strftime("%A")
+    if week_day == "Sunday":  # 后退2天为周五，3= 4, 4=3, 5=2, 6=1,7,8天为周六日跳过,循环13，第13为周五
+        for i in range(2, 14):
+            if i != 7 and i != 8:
+                if is_workday(d_now + timedelta(-i)):
+                    trade_day = (d_now + timedelta(-i)).date()
+                    break
+    elif week_day == "Monday":  # 后退1天为周7，2= 6, 3=5, 4=4, 5=3, 6=2, 7=1, 8=7, 1,2,8,9天为周六日跳过,循环11，第11为周五
+            for i in range(3, 15):
+                if i != 8 and i != 9:
+                    if is_workday(d_now + timedelta(-i)):
+                        trade_day = (d_now + timedelta(-i)).date()
+                        print(trade_day)
+                        break
+    # 后退1天为周1，2= 周7, 3=周6, 4= 周5, 5=周4, 6= 周3, 7=周2, 8= 周1, 9=周7, 2,3,9,10天为周六日跳过,循环12，第12为周五
+    elif week_day == "Tuesday":
+            for i in range(1, 16):
+                if i != 2 and i != 3 and i != 9 and i != 10:
+                    if is_workday(d_now + timedelta(-i)):
+                        trade_day = (d_now + timedelta(-i)).date()
+                        break
+    # 后退1天为周2，2= 周1, 3=周7, 4= 周6, 5=周5, 6= 周4, 7=周3, 8= 周2, 9=周1, 3, 4, 10,11天为周六日跳过
+    elif week_day == "Wednesday":
+            for i in range(1, 17):
+                if i != 3 and i != 4 and i != 10 and i != 11:
+                    if is_workday(d_now + timedelta(-i)):
+                        trade_day = (d_now + timedelta(-i)).date()
+                        break
+    # 后退1天为周3，2= 周2, 3=周1, 4= 周7, 5=周6, 6= 周5, 7=周4, 8= 周3, 9=周2, 10=周1, 4, 5, 11,12天为周六日跳过
+    elif week_day == "Thursday":
+            for i in range(1, 18):
+                if i != 4 and i != 5 and i != 11 and i != 12:
+                    if is_workday(d_now + timedelta(-i)):
+                        trade_day = (d_now + timedelta(-i)).date()
+                        break
+    # 后退1天为周4，2= 周3, 3=周2, 4= 周1, 5=周7, 6= 周6, 7=周5, 8= 周4, 9=周3, 10=周2, 11=周1, 5, 6, 12,13天为周六日跳过
+    elif week_day == "Friday":
+            for i in range(1, 19):
+                if i != 5 and i != 6 and i != 12 and i != 13:
+                    if is_workday(d_now + timedelta(-i)):
+                        trade_day = (d_now + timedelta(-i)).date()
+                        break
+    elif week_day == "Saturday":  # 后退一天为周五，2= 4, 3=3, 4=2, 5=1,6,7天为周六日跳过,循环12，第12为周五
+        for i in range(1, 13):
+            if i != 6 and i != 7:
+                if is_workday(d_now + timedelta(-i)):
+                    trade_day = (d_now + timedelta(-i)).date()
+                    break
+    return trade_day
 
 
 # 传入路径，读取csv数据,

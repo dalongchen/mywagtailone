@@ -1,7 +1,6 @@
 import os
 import sys
 import re
-import time
 from time import sleep
 import requests
 import sqlite3
@@ -10,34 +9,22 @@ from django.utils.safestring import mark_safe
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions
-# from .models import ShgtDf2021
-# from .models import MResearchReport as mrr
 from django.http import HttpResponse, JsonResponse
 from django.db import connection
 import json
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import win32crypt
-import win32api
-import win32com
-import win32gui
-import win32con
 import psutil
 import pprint
 import baostock as bs
-import pandas as pd
-import easytrader
 import pywinauto
-from pywinauto.controls.hwndwrapper import HwndWrapper
 from selenium.webdriver.support import expected_conditions as EC
 import string
-# import datetime
 from datetime import date as d_date
 from datetime import datetime, timedelta
 from chinese_calendar import is_workday, is_holiday
-import chinese_calendar as calendar
 import shutil
-import dateutil
 from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from django.db import transaction
@@ -49,13 +36,6 @@ from pprint import pprint
 from ratelimit.decorators import ratelimit
 import numpy as np
 import pandas as pd
-import unicodedata
-import matplotlib.pyplot as plt
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
-from treeinterpreter import treeinterpreter as ti
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.linear_model import LogisticRegression
-from sklearn.neural_network import MLPClassifier
 
 
 def index(request):
@@ -97,7 +77,6 @@ def east_money_lgt(request):
     if s == "east_dragon":
         if d_t:
             return JsonResponse({'number': east_dragon_tiger_new(d_t)})
-            # return JsonResponse({'number': east_dragon_tiger(d_t)})
         return JsonResponse({'number': '缺日期'})
 
     # 读东财陆股通
@@ -136,10 +115,6 @@ def east_money_lgt(request):
         ss = research_organization(re_get.get("start_date", ""), re_get.get("end_date", ""), '10000')
         return JsonResponse({'number': s + ss})
 
-    # 读东财机构调研股票数量 被上面研报代替。
-    # if re_get.get("research_organization", "") == "research_organization":
-    #     return JsonResponse({'number': research_organization(re_get.get("start_date", ""), re_get.get("end_date", ""), '10000', "research_organization")})
-
     # 交集和并集股票数量
     if s == "combine":
         return JsonResponse({'number': combine()})
@@ -148,12 +123,6 @@ def east_money_lgt(request):
     if s == "shown_choice":
         write_self_hai_tong()  # 读choice写自选和海通自选
         return JsonResponse({'number': "choice板块" + str(len(read_choice("choice.blk")))})
-
-    # 废弃，已经和上面合并。读choice写自选和海通自选
-    # if re_get.get("read_self_choice", "") == "read_self_choice":
-    #     # print("read_self_choice")
-    #     write_self_hai_tong()  # 读choice写自选和海通自选
-    #     return JsonResponse({'is_success': "成功"})
 
     # 读dragon板块龙虎榜页面
     if s == "open_dragon":
@@ -193,12 +162,12 @@ def east_money_lgt(request):
                     print("Unexpected error:", sys.exc_info())
                     exit(1)
             else:
-                return JsonResponse({'number': "没交易路径"})
+                return JsonResponse({'number': "没路径"})
 
             if os.path.exists(r"D:\myzq\axzq\T0002"):  # 如果文件存在
-                if os.path.exists(r"E:\T0002\T0002.zip"):
-                    os.remove(r"E:\T0002\T0002.zip")
-                tools.create_zip(r"D:\myzq\axzq\T0002", r"E:\T0002", note="T0002")
+                if os.path.exists(r"E:\T0002.zip"):
+                    os.remove(r"E:\T0002.zip")
+                tools.create_zip(r"D:\myzq\axzq\T0002", r"E:\T0002", "dd")
                 return JsonResponse({'number': "ok"})
             else:
                 return JsonResponse({'number': "没行情路径"})
@@ -210,21 +179,6 @@ def east_money_lgt(request):
         if d_t:
             return JsonResponse({'number': ths_lgt(d_t)})
         return JsonResponse({'number': "缺日期 "})
-
-    # 同花顺公告利好 以弃用，
-    # if re_get.get("ths_notice", "") == "ths_notice":
-    #     open_chrome()
-    #     number = ths_notice_good(date)
-    #     # number = ""
-    #     # print(number)
-    #     return JsonResponse({'number': number})
-
-    # 东财公告利好 以弃用，
-    # if re_get.get("dc_notice", "") == "dc_notice":
-    #     number = ths_notice_good(date)
-    #     # number = ""
-    #     # print(number)
-    #     return JsonResponse({'number': number})
 
     # 同花顺涨停或大于5
     if re_get.get("ths_rise", "") == "ths_rise":
@@ -435,10 +389,14 @@ def east_data(request):
 # 独立交易
 @ratelimit(key='ip', rate='5/15s', block=True)
 def easy_trade(request):
+    from .view import easy_trade
     re_get = request.GET
     s = re_get.get("s", "")
     # 预埋单
     if s == "pre_paid":
+        easy_trade.trade_save()  # 另存持仓数据
+        sleep(2)
+        df = pd.read_table(r"D:\ana\envs\py36\mywagtailone\my_ignore\table.xls", usecols=["证券代码", "股票余额"], encoding="gbk")
         stock_trade = []
         # 读取choice板块买入
         with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
@@ -449,11 +407,13 @@ def easy_trade(request):
                 if stock_list:
                     if ii == "choice.blk":
                         buy = "买入"
+                        num = 100
                     else:
                         buy = "卖出"
                     for item in stock_list:  # 获取交易数据
-                        # print(item)
-                        # print(item[3:])
+                        if buy == "卖出":
+                            dd = df[(df["证券代码"] == item[3:])]
+                            num = list(dd["股票余额"])[0]
                         if item.startswith("sz"):
                             xd_2106 = mysetting.HOLDER_CODE[0][0]
                             xd_2108 = mysetting.HOLDER_CODE[0][1]
@@ -474,7 +434,7 @@ def easy_trade(request):
                                 "xd_2106": xd_2106,
                                 "xd_2109": buy,
                                 "xd_2127": t[2],
-                                "xd_2126": 100,
+                                "xd_2126": num,
                                 "xd_2108": xd_2108,
                             })
 
@@ -502,7 +462,7 @@ def easy_trade(request):
                 cu.close()
         return JsonResponse({'pre_paid': []})
 
-    # 显示并修改预埋单
+    # 显示预埋单
     if s == "show_pre":
         # is_not_path判断路径是否存在并返回路径
         with sqlite3.connect(is_not_path("data/ymddata.db", path_list=mysetting.JY_URL, flag="3")) as conn:
@@ -522,9 +482,10 @@ def easy_trade(request):
                     # print(ii['xd_2105'])
                     # print(ii['xd_2105'] is None)
                     # print(ii['xd_2105'] is not None)
-                    # if ii['xd_2103']:
-                    #     print(ii['xd_2103'])
-                        # ii['xd_2103'] = ii['xd_2103'].decode(encoding="gbk")
+                    if ii['xd_2103']:
+                        if isinstance(ii['xd_2103'], bytes):
+                            # print(ii['xd_2103'])
+                            ii['xd_2103'] = ii['xd_2103'].decode(encoding="gbk")
                     # if ii['xd_2108']:
                     #     print(ii['xd_2108'])
                     #     ii['xd_2108'] = ii['xd_2108'].decode(encoding="gbk")
@@ -553,7 +514,7 @@ def easy_trade(request):
                                 for dd in stock_dict:
                                     ii["da"] = dd["da"]
                                     ii["close"] = dd["xd_2127"]
-                # pprint(results)
+                pprint(results)
                 cu.close()
         return JsonResponse({'show_pre': results})
 
@@ -564,7 +525,6 @@ def easy_trade(request):
             stock_list += read_choice_code(ii, pure="pure")
         if stock_list:
             trade_date = tools.get_date()  # 获取那一天数据
-            # pd_csv = pd.read_csv(mysetting.STOCK_CLOSE_CACHE, dtype={'xd_2102': object}).to_dict(orient='records')
             if os.path.isfile(mysetting.DATA_TABLE_DB):
                 with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
                     # conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
@@ -589,7 +549,6 @@ def easy_trade(request):
     # 预买增删改
     if s == "edit" or s == "delete":
         dd = re_get.get("d", "")
-        print(s)
         print(dd)
         if dd:
             dd = json.loads(dd)
@@ -605,9 +564,7 @@ def easy_trade(request):
                                 d["xd_2109"] = d["xd_2109"].encode(encoding='gbk')
                                 sql = "update ymd_1280194006 SET xd_2109 = ?, xd_2127= ?, xd_2126= ? WHERE xd_2102= ?"
                                 cu.execute(sql, (d["xd_2109"], d["xd_2127"], d["xd_2126"], d["xd_2102"]))
-                    # columns = [_[0].lower() for _ in cu.description]
-                    # results = [dict(zip(columns, _)) for _ in cu]
-                    # results = [_[0] for _ in cu]
+
                     cu.close()
         return JsonResponse({})
 
@@ -636,7 +593,6 @@ def insert_close(stock_list):
     stock_dict = get_stock_close(stock_list)  # 获取交易数据
     if stock_dict:
         with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
-            # conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
             cu = conn.cursor()
             # cu.execute("delete FROM ymd_1280194006 WHERE da!='{}'".format(str(trade_date)))
             for t in stock_dict:
@@ -664,14 +620,19 @@ def insert_close(stock_list):
 def get_stock_close(stock_list):
     from .view import easy_trade
     d_now = datetime.now()
-    iss = is_workday(d_now.date())
-    if iss and (15 >= d_now.hour >= 9):  # 交易日9-15时段去调bookstock行情
-        # 取昨天(d_now + timedelta(-1)).date()
-        stock_dict = easy_trade.inquiry_close(stock_list, str((d_now + timedelta(-1)).date()))
+    trade_day = tools.get_late_trade_day(d_now)
+    # print(trade_day != d_now.date())
+    if trade_day == d_now.date():
+        if d_now.hour <= 9:
+            # 取昨天(d_now + timedelta(-1)).date()
+            stock_dict = easy_trade.inquiry_close(stock_list, str((d_now + timedelta(-1)).date()))
+        elif 18 >= d_now.hour > 9:
+            stock_dict = get_xin_lan(stock_list)  # 循环获取新浪行情构建数据
+        else:
+            stock_dict = easy_trade.inquiry_close(stock_list, str(trade_day))
     else:
-        stock_dict = get_xin_lan(stock_list)  # 循环获取新浪行情构建数据
-
-    print("get_trade_data", stock_dict)
+        stock_dict = easy_trade.inquiry_close(stock_list, str(trade_day))
+    # print("get_trade_data", stock_dict)
     return stock_dict
 
 
@@ -2380,9 +2341,9 @@ def east_dragon_tiger(date):
 # 代替上面east_dragon_tiger，读东财龙虎榜 # 净买入 'JmMoney': '63519965.72',涨幅 'Chgradio': '9.98',
 def east_dragon_tiger_new(da):
     li = east_dragon_tiger_new_son("http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/YYBJXMX/GetYYBJXMX?js=&sortfield=&sortdirec=-1&pageSize=50&pageNum=1&tkn=eastmoney&salesCode=80601499&tdir=&dayNum=&startDateTime={}&endDateTime={}&cfg=yybjymx".format(da, da))
-    ss = len(li)
+    ss = len(li)  # 深
     li += east_dragon_tiger_new_son("http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/YYBJXMX/GetYYBJXMX?js=&sortfield=&sortdirec=-1&pageSize=50&pageNum=1&tkn=eastmoney&salesCode=80403915&tdir=&dayNum=&startDateTime={}&endDateTime={}&cfg=yybjymx".format(da, da))
-    sss = len(li) - ss
+    sss = len(li) - ss  # 沪
     # print(sss)
     # 读东财龙虎榜 机构
     organization_dragon_tiger = requests.get("http://data.eastmoney.com/DataCenter_V3/stock2016/DailyStockListStatistics/pagesize=100,page=1,sortRule=-1,sortType=PBuy,startDate=" + da + ",endDate=" + da + ",gpfw=0,js=.html?rt=26985157")
@@ -2396,8 +2357,6 @@ def east_dragon_tiger_new(da):
         dragon_tiger_list2['1' + da + '\n'] = 0  # 最后加日期，给页面打开龙虎榜用
         tiger_list2 = dict(sorted(dragon_tiger_list2.items(), key=lambda x: x[1], reverse=True)).keys()
         tiger_list2 = list(tiger_list2)
-        # print(tiger_list2)
-        # print(len(tiger_list2) - 1)
         i = 0
         for each in tiger_list2:
             if each not in li:
@@ -2745,10 +2704,10 @@ def log_on_ht():
             ap.close()
             sleep(5)
             new_app = pywinauto.Application(backend="uia").start(path_folder)
-            new_app.wait("ready", timeout=15, retry_interval=2)
+            new_app.wait("visible", timeout=15, retry_interval=2)
             # sleep(5)
             new_ap = new_app.window(best_match=u"用户登录")
-            new_ap.wait("ready", timeout=15, retry_interval=2)
+            new_ap.wait("visible", timeout=15, retry_interval=2)
             # sleep(10)
             if new_ap.exists():
                 new_ap.children()[1].type_keys("282766")
@@ -2758,10 +2717,7 @@ def log_on_ht():
                 new_ap.children()[13].click().wait("ready")
                 sleep(2)
                 trade = new_app.window(best_match=u"网上股票交易系统")
-                trade.wait("ready", timeout=15, retry_interval=2)
-                # sleep(4)
-                # exists = trade.exists()
-                # print(exists)
+                trade.wait("visible", timeout=15, retry_interval=2)
                 if trade.exists():
                     return trade
                 else:
@@ -2773,7 +2729,7 @@ def log_on_ht():
         else:
             app.top_window().set_focus()
             ap = app.window(best_match=u"网上股票交易系统")
-            ap.wait("ready", timeout=15, retry_interval=2)
+            ap.wait("visible", timeout=15, retry_interval=2)
             if ap:
                 return ap
             else:
@@ -2781,15 +2737,10 @@ def log_on_ht():
                 return False
     else:
         app = pywinauto.Application(backend="uia").start(path_folder)
-        sleep(3)
+        sleep(1)
         ap = app.window(best_match=u"用户登录")
-        ap.wait("ready", timeout=15, retry_interval=2)
-        sleep(4)
-        # is_no = ap.exists()
-        # print(is_no)
+        ap.wait("visible", timeout=15, retry_interval=2)
         if ap.exists():
-            # ap.children()[1].draw_outline(colour='red', thickness=5)
-            # pass
             sleep(1)
             ap.children()[1].type_keys("282766")
             sleep(2)
@@ -2802,13 +2753,7 @@ def log_on_ht():
                 connect = pywinauto.Application("uia").connect(process=pid)
                 trade = connect.window(best_match=u"网上股票交易系统")
                 trade.wait("ready", timeout=10, retry_interval=2)
-                # sleep(3)
-                # exists = trade.exists()
-                # print(exists)
                 if trade.exists():
-                    # trade.draw_outline(colour='red', thickness=5)
-                    # print(trade)
-                    # pass
                     return trade
                 else:
                     ap.close()

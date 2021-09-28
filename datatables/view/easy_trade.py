@@ -1,4 +1,5 @@
-# from .. import views
+from .. import views
+import os
 
 
 # 查询当天收盘价并构建数据给交易软件。查询收盘价和名字
@@ -88,3 +89,16 @@ def inquiry_close(stock_list, d_trade):
     return stock
 
 
+# 另存持仓数据
+def trade_save():
+    if os.path.isfile(r"D:\ana\envs\py36\mywagtailone\my_ignore\table.xls"):
+        os.remove(r"D:\ana\envs\py36\mywagtailone\my_ignore\table.xls")
+    dialog = views.log_on_ht()
+    dia = dialog.window(best_match="Custom1", auto_id="1047", class_name="CVirtualGridCtrl", control_type="Pane")
+    # dia.print_control_identifiers()
+    dia.wait("visible", timeout=10, retry_interval=1)
+    dia.type_keys("^s")
+    dia.wait("visible", timeout=5, retry_interval=1)
+    save = dialog.window(best_match="保存(S)", auto_id="1", class_name="Button", control_type="Button")
+    # save.draw_outline()
+    save.type_keys("{VK_RETURN}")

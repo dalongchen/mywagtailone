@@ -1,7 +1,19 @@
 from mywagtailone.datatables import main_test
 if __name__ == "__main__":
-    # main_test.test_sq_lite()
-    main_test.test_my()
+    # main_test.test_sq_lite(r"D:\my2\user.db")
+    # main_test.test_my()
+    # main_test.zip_ya(r"D:\myzq\axzq\T0002", r"E:\T0002", "dd")
+    # main_test.test_trade_save()
+    # main_test.test_read_xls()
+    # 深圳
+    # net = "http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/YYBJXMX/GetYYBJXMX?js=&sortfield=&sortdirec=-1&pageSize={}&pageNum=1&tkn=eastmoney&salesCode=80601499&tdir=&dayNum=&startDateTime={}&endDateTime={}&cfg=yybjymx"
+    # 上海
+    # net = "http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/YYBJXMX/GetYYBJXMX?js=&sortfield=&sortdirec=-1&pageSize={}&pageNum=1&tkn=eastmoney&salesCode=80403915&tdir=&dayNum=&startDateTime={}&endDateTime={}&cfg=yybjymx"
+    # main_test.east_dragon_tiger_new(net, 3, "2021-09-26", "2021-09-27", f="")
+    # 机构,只能1月求一次
+    # net = "http://data.eastmoney.com/DataCenter_V3/stock2016/DailyStockListStatistics/pagesize={},page=1,sortRule=-1,sortType=PBuy,startDate={},endDate={},gpfw=0,js=.html?rt=26985157"
+    # main_test.east_dragon_tiger_new(net, 1000, "2021-07-01", "2021-07-31", f="institution")
+    main_test.dragon_tiger_into_tdx()
 
     def stock_robot_test(p):
         import numpy as np
@@ -119,7 +131,6 @@ if __name__ == "__main__":
             predicted_price = predict_future(last, np, model, sc)
             # 画未来预测线
             predict_future_curve(predicted_price, plt)
-
 
     # lstm算法
     def stock_robot_lstm(p):

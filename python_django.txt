@@ -17,3 +17,9 @@ pip install PyMySQL-0.9.3-py2.py3-none-any.whl
 压字典格式
 columns = [_[0].lower() for _ in cu.description]
 results = [dict(zip(columns, _)) for _ in cu]
+
+#打印控件所有可用的方法
+object_func = dlg['Button1'].wrapper_object()
+print(dir(object_func))
+dlg_new.draw_outline() 在窗体的周边划线
+dlg_new.print_control_identifiers()# 打印出 窗体的结构  你可以查找对应的控
