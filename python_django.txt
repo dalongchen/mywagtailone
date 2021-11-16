@@ -23,3 +23,7 @@ object_func = dlg['Button1'].wrapper_object()
 print(dir(object_func))
 dlg_new.draw_outline() 在窗体的周边划线
 dlg_new.print_control_identifiers()# 打印出 窗体的结构  你可以查找对应的控
+
+列表生成式去重
+res = {_[0] for _ in cu}
+for _ in res:

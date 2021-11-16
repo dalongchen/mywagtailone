@@ -589,7 +589,7 @@ def insert_close(stock_list):
         else:
             v = "sz." + v
         stock_list[i] = v
-    print("插入收盘价", stock_list)
+    # print("插入收盘价", stock_list)
     stock_dict = get_stock_close(stock_list)  # 获取交易数据
     if stock_dict:
         with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
@@ -3040,7 +3040,7 @@ def add_xue_qiu(stock_code):
         print("cookie可能有误")
 
 
-# code加(0 or 1) or (1 or 0) or (1.  0.)
+# code加(0 or 1) or (1 or 0) or (1.  0.) or param="01or00"(01, 00)
 def code_add(code, param=""):
     if param == "":
         if code.startswith("0") or code.startswith("3") or code.startswith("2"):
@@ -3063,6 +3063,13 @@ def code_add(code, param=""):
             code = "1." + code
         else:
             code = "0" + code
+    elif param == "01or00":
+        if code.startswith("0") or code.startswith("3") or code.startswith("2"):
+            code = "00" + code
+        elif code.startswith("5") or code.startswith("6") or code.startswith("9"):
+            code = "01" + code
+        else:
+            code = "00" + code
     return code
 
 
@@ -3223,34 +3230,34 @@ def search_integration(request):
         return HttpResponse()
 
 
-def shgtDf2021():
-    data = ShgtDf2021.objects.all()[:200].values()
-    total_length = ShgtDf2021.objects.all()[:200].count()
-    print(total_length)
+# def shgtDf2021():
+#     data = ShgtDf2021.objects.all()[:200].values()
+#     total_length = ShgtDf2021.objects.all()[:200].count()
+#     print(total_length)
+#
+#     # re = json.dumps(list(aa), ensure_ascii=False)
+#     re = json.dumps({"data": list(data), "iTotalDisplayRecords": total_length}, ensure_ascii=False)
+#     # print(re)
+#     # print(getType(re))
+#     return mark_safe(re)
 
-    # re = json.dumps(list(aa), ensure_ascii=False)
-    re = json.dumps({"data": list(data), "iTotalDisplayRecords": total_length}, ensure_ascii=False)
-    # print(re)
-    # print(getType(re))
-    return mark_safe(re)
 
-
-def queryset_json(query, parameter, para):  # 默认为return list and not mark_safe
-    data = query.values()
-    # total_length = ShgtDf2021.objects.all()[:200].count()
-    # print(data)
-    if parameter == 'dict_json':
-        re = json.dumps({"data": list(data)}, ensure_ascii=False)
-    elif parameter == 'list_json':  # parameter=2不加data
-        re = json.dumps(list(data), ensure_ascii=False)
-    elif parameter == 'dict':  # parameter=3返回字典，不json化
-        re = {"data": list(data)}
-    else:
-        re = list(data)
-    if para == 'mark_safe':
-        return mark_safe(re)
-    else:
-        return re
+# def queryset_json(query, parameter, para):  # 默认为return list and not mark_safe
+#     data = query.values()
+#     # total_length = ShgtDf2021.objects.all()[:200].count()
+#     # print(data)
+#     if parameter == 'dict_json':
+#         re = json.dumps({"data": list(data)}, ensure_ascii=False)
+#     elif parameter == 'list_json':  # parameter=2不加data
+#         re = json.dumps(list(data), ensure_ascii=False)
+#     elif parameter == 'dict':  # parameter=3返回字典，不json化
+#         re = {"data": list(data)}
+#     else:
+#         re = list(data)
+#     if para == 'mark_safe':
+#         return mark_safe(re)
+#     else:
+#         return re
 TOTAL = ''
 
 
@@ -3352,15 +3359,15 @@ def my_custom_sql(request):
     return {'rows': res, 'total': TOTAL}
 
 
-def dict_json(query, parameter=1):  # parameter=1加data
-    if parameter == 1:
-        re = json.dumps({"data": query}, ensure_ascii=False)
-    elif parameter == 2:  # parameter=2不加data
-        re = json.dumps(query, ensure_ascii=False)
-    else:
-        print('错误的参数')
-    # return re
-    return mark_safe(re)
+# def dict_json(query, parameter=1):  # parameter=1加data
+#     if parameter == 1:
+#         re = json.dumps({"data": query}, ensure_ascii=False)
+#     elif parameter == 2:  # parameter=2不加data
+#         re = json.dumps(query, ensure_ascii=False)
+#     else:
+#         print('错误的参数')
+#     # return re
+#     return mark_safe(re)
 
 
 # 判断变量类型的函数
@@ -3404,18 +3411,18 @@ def props(obj):
 
 
 # 将class转dict,以_开头的也要
-def props_with_(obj):
-    pr = {}
-    for name in dir(obj):
-        value = getattr(obj, name)
-        pr[name] = value
-    return pr
+# def props_with_(obj):
+#     pr = {}
+#     for name in dir(obj):
+#         value = getattr(obj, name)
+#         pr[name] = value
+#     return pr
 
 
 # dict转obj，先初始化一个obj
-def dict2obj(obj, dict):
-    obj.__dict__.update(dict)
-    return obj
+# def dict2obj(obj, dict):
+#     obj.__dict__.update(dict)
+#     return obj
 
 
 # 判断是否可以float
@@ -3428,39 +3435,39 @@ def isfloat(value):
 
 
 # 判断时间范围
-def judge_time_scope(now, start_time, end_time):
-    # 范围时间
-    start_time = datetime.strptime(str(now.date()) + start_time, '%Y-%m-%d%H:%M')
-    end_time = datetime.strptime(str(now.date()) + end_time, '%Y-%m-%d%H:%M')
-    # 判断当前时间是否在范围时间内
-    if (now > start_time) and now < end_time:
-        return True
-    else:
-        return False
+# def judge_time_scope(now, start_time, end_time):
+#     # 范围时间
+#     start_time = datetime.strptime(str(now.date()) + start_time, '%Y-%m-%d%H:%M')
+#     end_time = datetime.strptime(str(now.date()) + end_time, '%Y-%m-%d%H:%M')
+#     # 判断当前时间是否在范围时间内
+#     if (now > start_time) and now < end_time:
+#         return True
+#     else:
+#         return False
 
 
 # 判断是否交易时间范围
-def judge_trade_time(i_date):
-    print(i_date)
-    # 判断是否为节假日,周六日
-    if (i_date.isoweekday() == (6 or 7)) or is_holiday(d_date(i_date.year, i_date.month, i_date.day)):
-        return "节假日"
-    else:
-        if judge_time_scope(i_date, "9:25", "15:00"):
-            return "交易时段"
-        else:
-            return "交易日但非交易时段"
+# def judge_trade_time(i_date):
+#     print(i_date)
+#     # 判断是否为节假日,周六日
+#     if (i_date.isoweekday() == (6 or 7)) or is_holiday(d_date(i_date.year, i_date.month, i_date.day)):
+#         return "节假日"
+#     else:
+#         if judge_time_scope(i_date, "9:25", "15:00"):
+#             return "交易时段"
+#         else:
+#             return "交易日但非交易时段"
 
 
 # 复制文件
-def copy_file(source, target):
-    try:
-        shutil.copyfile(source, target)
-        return 1
-    except IOError as e:
-        print("Unable to copy file. %s" % e)
-        sys.exit(1)
-    except:
-        print("Unexpected error:", sys.exc_info())
-        sys.exit(1)
-    print("复制文件失败")
+# def copy_file(source, target):
+#     try:
+#         shutil.copyfile(source, target)
+#         return 1
+#     except IOError as e:
+#         print("Unable to copy file. %s" % e)
+#         sys.exit(1)
+#     except:
+#         print("Unexpected error:", sys.exc_info())
+#         sys.exit(1)
+#     print("复制文件失败")

@@ -50,7 +50,7 @@ def bai_du(kw):
     return
 
 
-# 日期自增
+# 日期自增days=1为当天
 def time_increase(begin_time, days):
     ts = time.strptime(str(begin_time), "%Y-%m-%d")
     ts = time.mktime(ts)
@@ -147,59 +147,102 @@ def get_date():
         return my_date
 
 
-# 如果当天为交易日则返回否则返回两周内最近一个交易日
-def get_late_trade_day(d_now):
+# 如果当天为交易日则返回否则返回两周内最近一个交易日add_subtract="subtract"后退
+# d_now = "%Y-%m-%d"),
+def get_late_trade_day(d_now, add_subtract="subtract", f="d"):
     from chinese_calendar import is_workday
     timedelta = datetime.timedelta
+    # print("d_now", d_now)
+    # print("d_now", isinstance(d_now, datetime.datetime))
+    if not isinstance(d_now, datetime.datetime):
+        d_now = datetime.datetime.strptime(d_now, "%Y-%m-%d")
+    # % A 周几
     week_day = d_now.date().strftime("%A")
     if week_day == "Sunday":  # 后退2天为周五，3= 4, 4=3, 5=2, 6=1,7,8天为周六日跳过,循环13，第13为周五
         for i in range(2, 14):
             if i != 7 and i != 8:
-                if is_workday(d_now + timedelta(-i)):
-                    trade_day = (d_now + timedelta(-i)).date()
-                    break
+                if add_subtract == "subtract":
+                    if is_workday(d_now + timedelta(-i)):
+                        trade_day = (d_now + timedelta(-i))
+                        break
+                else:
+                    if is_workday(d_now + timedelta(+i)):
+                        trade_day = (d_now + timedelta(+i))
+                        break
     elif week_day == "Monday":  # 后退1天为周7，2= 6, 3=5, 4=4, 5=3, 6=2, 7=1, 8=7, 1,2,8,9天为周六日跳过,循环11，第11为周五
             for i in range(3, 15):
                 if i != 8 and i != 9:
-                    if is_workday(d_now + timedelta(-i)):
-                        trade_day = (d_now + timedelta(-i)).date()
-                        print(trade_day)
-                        break
+                    if add_subtract == "subtract":
+                        if is_workday(d_now + timedelta(-i)):
+                            trade_day = (d_now + timedelta(-i))
+                            break
+                    else:
+                        if is_workday(d_now + timedelta(+i)):
+                            trade_day = (d_now + timedelta(+i))
+                            break
     # 后退1天为周1，2= 周7, 3=周6, 4= 周5, 5=周4, 6= 周3, 7=周2, 8= 周1, 9=周7, 2,3,9,10天为周六日跳过,循环12，第12为周五
     elif week_day == "Tuesday":
             for i in range(1, 16):
-                if i != 2 and i != 3 and i != 9 and i != 10:
+                if add_subtract == "subtract":
                     if is_workday(d_now + timedelta(-i)):
-                        trade_day = (d_now + timedelta(-i)).date()
+                        trade_day = (d_now + timedelta(-i))
+                        break
+                else:
+                    if is_workday(d_now + timedelta(+i)):
+                        trade_day = (d_now + timedelta(+i))
                         break
     # 后退1天为周2，2= 周1, 3=周7, 4= 周6, 5=周5, 6= 周4, 7=周3, 8= 周2, 9=周1, 3, 4, 10,11天为周六日跳过
     elif week_day == "Wednesday":
             for i in range(1, 17):
                 if i != 3 and i != 4 and i != 10 and i != 11:
-                    if is_workday(d_now + timedelta(-i)):
-                        trade_day = (d_now + timedelta(-i)).date()
-                        break
+                    if add_subtract == "subtract":
+                        if is_workday(d_now + timedelta(-i)):
+                            trade_day = (d_now + timedelta(-i))
+                            break
+                    else:
+                        if is_workday(d_now + timedelta(+i)):
+                            trade_day = (d_now + timedelta(+i))
+                            break
     # 后退1天为周3，2= 周2, 3=周1, 4= 周7, 5=周6, 6= 周5, 7=周4, 8= 周3, 9=周2, 10=周1, 4, 5, 11,12天为周六日跳过
     elif week_day == "Thursday":
             for i in range(1, 18):
                 if i != 4 and i != 5 and i != 11 and i != 12:
-                    if is_workday(d_now + timedelta(-i)):
-                        trade_day = (d_now + timedelta(-i)).date()
-                        break
+                    if add_subtract == "subtract":
+                        if is_workday(d_now + timedelta(-i)):
+                            trade_day = (d_now + timedelta(-i))
+                            break
+                    else:
+                        if is_workday(d_now + timedelta(+i)):
+                            trade_day = (d_now + timedelta(+i))
+                            break
     # 后退1天为周4，2= 周3, 3=周2, 4= 周1, 5=周7, 6= 周6, 7=周5, 8= 周4, 9=周3, 10=周2, 11=周1, 5, 6, 12,13天为周六日跳过
     elif week_day == "Friday":
             for i in range(1, 19):
                 if i != 5 and i != 6 and i != 12 and i != 13:
-                    if is_workday(d_now + timedelta(-i)):
-                        trade_day = (d_now + timedelta(-i)).date()
-                        break
+                    if add_subtract == "subtract":
+                        if is_workday(d_now + timedelta(-i)):
+                            trade_day = (d_now + timedelta(-i))
+                            break
+                    else:
+                        if is_workday(d_now + timedelta(+i)):
+                            trade_day = (d_now + timedelta(+i))
+                            break
     elif week_day == "Saturday":  # 后退一天为周五，2= 4, 3=3, 4=2, 5=1,6,7天为周六日跳过,循环12，第12为周五
         for i in range(1, 13):
             if i != 6 and i != 7:
-                if is_workday(d_now + timedelta(-i)):
-                    trade_day = (d_now + timedelta(-i)).date()
-                    break
-    return trade_day
+                if add_subtract == "subtract":
+                    if is_workday(d_now + timedelta(-i)):
+                        trade_day = (d_now + timedelta(-i))
+                        break
+                else:
+                    if is_workday(d_now + timedelta(+i)):
+                        trade_day = (d_now + timedelta(+i))
+                        break
+    # f = "d"返回2021 - 07 - 01否则为2021 - 07 - 01 00：00：00
+    if f == "d":  # trade_day.date().strftime('%Y-%m-%d')
+        return trade_day.date()
+    else:
+        return trade_day
 
 
 # 传入路径，读取csv数据,

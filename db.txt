@@ -1,0 +1,10 @@
+update dragon_tiger_k_copy set code=substr(code, 4,12)
+update dragon_tiger_k set open = round(open,2)
+
+SELECT dr.date,dr.code,dk.open
+FROM dragon_tiger AS dr LEFT JOIN dragon_tiger_k as dk
+ON dr.code = dk.code and dr.date = dk.date ORDER BY dr.date ASC
+
+cu.execute("INSERT INTO ymd_1280194006 (xd_2103) VALUES(?)", ("%s" % t["xd_2103"].encode(encoding='gbk'),))
+
+cu.execute("INSERT INTO ymd_1280194006 (xd_2103) VALUES(?)", (t["xd_2103"].encode(encoding='gbk'),))
