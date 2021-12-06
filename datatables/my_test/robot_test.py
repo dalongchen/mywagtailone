@@ -1,5 +1,6 @@
 from numpy import *
 import numpy as np
+import os
 from pprint import pprint
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -139,8 +140,6 @@ def datingClassTest():
 # 神经网络图片识别
 def get_mnist_picture_data():
     from tensorflow.keras.datasets import mnist
-    from tensorflow import keras
-    from tensorflow.keras import layers
 
     # 该数据是由28 * 28像素的图像构成，训练集有60000个，测试集有10000个。
     (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
@@ -195,9 +194,6 @@ def base_learning():
 # 电影评论2分类
 def film_review_imdb():
     from tensorflow.keras.datasets import imdb
-    from tensorflow import keras
-    from tensorflow.keras import layers
-    import matplotlib.pyplot as plt
 
     # 参数 num_words=10000 的意思是仅保留训练数据中前 10 000 个最常出现的单词
     # 数据集被分为用于训练的 25 000 条评论与用于测试的 25 000 条评论，训练集和测试
@@ -827,25 +823,29 @@ def evaluate_naive_method(val_steps, val_gen, std):
 
 # 股票预测 p为数据库路径
 def predict_stock(p):
-    import os
     if os.path.isfile(p):
         float_data = stock_predict_read_data(p)  # 股票数据的读取和整理
-        """检查数据中是否有inf或者nan的情况。普通numpy数组可用,np.isfinite有限返回true，否则false
-        np.isfinite([np.log(-1.),1.,np.log(0)])= array([False,  True, False]),,
-        np.any()是或操作，任意一个元素为True，输出为True。np.all()是与操作，所有元素为True，输出为True
-"""
-        print("mis", np.all(np.isfinite(float_data)))
-        # temp = float_data[:, -1]  # 取每行最后一列
-        # plt.figure()
-        # plt.plot(range(len(temp)), temp)
-        # plt.legend()
-        # plt.show()
-        # print(float_data.shape)
-        # print(float_data.shape[0])
-        x_train, y_train, x_test, y_test = stock_predict_normal(float_data)  # 数据标准化，减去平均值，除以标准值,2维转3维
+        x_train, y_train, x_test, y_test, sc2 = min_max_scale(float_data)  # 标准化或归一化
+        # print('x_train', x_train.shape)
+        # print('y_train', y_train.shape)
+        # print('x_test', x_test.shape)
+        # print('y_test', y_test.shape)
+        x_train = x_train.reshape(x_train.shape[0], 1, x_train.shape[1])  # 2维转3维
+        x_test = x_test.reshape(x_test.shape[0], 1, x_test.shape[1])
+        # print('x_train', x_train.shape)
+        print('y_test', y_test.shape)
+        # print('y_test', y_test)
+        # x_train, y_train, x_test, y_test = stock_predict_normal(float_data)  # 数据标准化，减去平均值，除以标准值,2维转3维
         from tensorflow.keras.models import Sequential
         model = Sequential()
-        history = stock_predict_dnn(x_train, y_train, model)  # 密集连接模型DNN
+        p_save = r"D:\ana\envs\py36\mywagtailone\stock_train\{}".format(r"dense_train\min_max")
+        # p_save = r"D:\ana\envs\py36\mywagtailone\stock_train\{}".format("dense_train")
+        # dd = "g"
+        dd = ""
+        if dd:
+            import shutil
+            shutil.rmtree(p_save)  # 删除文件夹
+        history = stock_predict_dnn(x_train, y_train, model, p_save, 100)  # 密集连接模型DNN
         # history = stock_predict_grn(x_train, y_train)  # 基于GRU的模型 门控循环单元
         # history = stock_predict_grn_optimization(x_train, y_train)  # 门控循环单元（GRU，gated recurrent unit）优化
         # history = stock_predict_grn_recurrent(x_train, y_train)  # 循环差堆叠 门控循环单元
@@ -853,15 +853,95 @@ def predict_stock(p):
         # history = stock_predict_cnn(x_train, y_train)  # 使用一维卷积神经网络CNN
         # history = stock_predict_cnn_gru(x_train, y_train)  # 一维卷积基与GRU融合
         # 评估模型,不输出预测结果
-        loss = model.evaluate(x_test, y_test)
-        # loss, accuracy = model.evaluate(x_test, y_test)
-        print('test loss', loss)
-        # print('accuracy', accuracy)
+        # loss = model.evaluate(x_test, y_test)
+        # # loss, accuracy = model.evaluate(x_test, y_test)
+        # print('test loss', loss)
+        # # print('accuracy', accuracy)
+        stock_predict_plt(history)  # 训练loss可视化
+        y_test = sc2.inverse_transform(y_test)  # 原数据
+        y_test = y_test.flatten()  # 二维数组变成一维数组（np.array类型
+        print("y_test[-6:]", y_test[-6:])
+        # print("y_test[:6]", y_test[:6])
         # 模型预测,输入测试集,输出预测结果
+        # y_pred = model.predict(x_test)
         y_pred = model.predict(x_test, batch_size=1)
-        print('y_pred', y_pred)
-        print('y_pred', y_pred.shape)
-        stock_predict_plt(history)  # 股票预测可视化
+        # print('y_pred', y_pred[:5])
+        # print('y_pred', y_pred.shape)
+        y_pred = sc2.inverse_transform(y_pred)  # 对预测数据还原---从（0，1）反归一化到原始范围
+        y_pred = y_pred.flatten()  # 二维数组变成一维数组（np.array类型
+        # print("opopo", p)
+        print("y_pred[-6:]", y_pred[-6:])
+        # print("y_pred[:6]", y_pred[:6])
+        evaluate_error(y_pred, y_test)  # 评估误差
+        predict_curve(y_pred, y_test, p_save)  # 预测数据可视化对比
+
+
+#  标准化或归一化
+def min_max_scale(float_data):
+    """Min-max normalization, min-max 归一化的手段是一种线性的归一化方法，它的特点是不会对数据分布产生影响。不过如果你的数据的最大最小值不是
+    稳定的话，你的结果可能因此变得不稳定。min-max 归一化在图像处理上非常常用，因为大部分的像素值范围是 [0, 255]
+    Zero-mean normalization这就是均值方差归一化，这样处理后的数据将符合标准正太分布，常用在一些通过距离得出相似度的聚类算法中"""
+    from sklearn import preprocessing
+    """0均值归一化方法将原始数据集归一化为均值为0、方差1的数据集，该种归一化方式要求原始数据的分布可以近似为高斯分布，
+    否则归一化的效果会变得很糟糕,对一个数值特征来说，很大可能它是服从正态分布的。标准化其实是基于这个隐含假设，
+    只不过是略施小技，将这个正态分布调整为均值为0，方差为1的标准正态分布而已。
+    高斯分布是随机分布中最常见的一种，又称为正态分布"""
+    # sc = preprocessing.StandardScaler()  # 数据标准，对变化大的数据，比用MinMaxScaler更优
+    # sc2 = preprocessing.StandardScaler()
+    sc = preprocessing.MinMaxScaler(feature_range=(0, 1))  # 归一化到(0，1)之间,决策树模型并不适用归一化
+    sc2 = preprocessing.MinMaxScaler(feature_range=(0, 1))
+    # float_data = float_data[:20]
+    t = int(float_data.shape[0] * 0.9)  # 取前2/3
+    """fit_transform方法是fit和transform的结合，fit_transform(X_train) 意思是找出X_train的均值和标准差，并应用在X_train上。
+这时对于X_test，我们就可以直接使用transform方法。因为此时StandardScaler已经保存了X_train的。
+问题二：为什么可以用训练集的 来transform 测试集的数据X_test?
+答：我们家大王说，“机器学习中有很多假设，这里假设了训练集的样本采样足够充分”。我觉得颇有道理"""
+    # 求得训练集的最大值，最小值这些训练集固有的属性，并在训练集上进行归一化
+    # temp = float_data[:t, -1]  # 取每行最后一列
+    # print(temp.shape)
+    # plt_simple(temp)  # 画图
+    x_train = sc.fit_transform(float_data[:t, : -1])  # 对特征和标签分别标准，有利于后面预测反标准化
+    y_train = float_data[:t, -1]
+    y_train = y_train.reshape(y_train.shape[0], 1)  # 1维转2维
+    # print(y_train.shape)
+    y_train = sc2.fit_transform(y_train)
+    # x_ = sc.fit_transform(float_data[:t])
+    # x_train = x_[:, : -1]
+    # y_train = x_[:, -1]
+
+    """y_train.shape = (917,)
+    y_train[:10]= [-0.54619155 -0.1672131   0.09102414  0.09102414  0.62824271 -0.4209292 -0.52544746 -0.14434142 -0.51986252 -0.32252778]"""
+    print(x_train.shape, y_train.shape)
+    # print("y_train33", y_train[:10])
+    # plt_simple(y_train)  # 画图
+    # print(float_data[t:, :-1].shape)
+    # plt_simple(float_data[t:, -1])  # 画图
+    x_test = sc.transform(float_data[t:, : -1])  # 对特征和标签分别标准，有利于后面预测反标准化
+    y_test = float_data[t:, -1]
+    y_test = y_test.reshape(y_test.shape[0], 1)  # 1维转2维
+    # print("llll", y_test[:5])
+    print(x_test.shape, y_test.shape)
+    y_test = sc2.transform(y_test)
+    # print(y_test[:10])
+    # print(y_test.shape)
+    # x_ = sc.transform(float_data[t:])  # 利用训练集的属性对测试集进行归一化
+    # x_test = x_[:, : -1]
+    # y_test = x_[:, -1]
+    # print(x_.shape)
+    # print(x_test.shape)
+    # print(y_test.shape)
+    # print(x_test)
+    # print(y_test)
+    # plt_simple(y_test)  # 画图
+    return x_train, y_train, x_test, y_test, sc2  # sc2后面反标准化
+
+
+# 画图
+def plt_simple(temp):
+    plt.figure()
+    plt.plot(range(len(temp)), temp)
+    plt.legend()
+    plt.show()
 
 
 # 一维卷积基与GRU融合
@@ -980,51 +1060,179 @@ def stock_predict_grn(x_train, y_train):
     return history
 
 
-# 股票数据的读取和整理
-def stock_predict_read_data(p):
+# 股票数据的读取和整理 p为数据库路径, num为数据量大小
+def stock_predict_read_data(p, num=""):
     import sqlite3
+    from ..tool import tools
     with sqlite3.connect(p) as conn:
         cu = conn.cursor()
-        cu.execute("select * FROM dragon_tiger ORDER BY date ASC;")
-        # row = cu.fetchone()
-        rows = cu.fetchall()
-        # rows = cu.fetchmany(200)
-        # rows = cu.fetchmany(-1) # 0到倒数1
-        # results = [_[0] for _ in cu]
-        # # print(results)
-        # res = list(set(results))
-        # res.sort(key=results.index)
+        cu2 = conn.cursor()
+        # accum_amount 区间交易金额，如连续3天，则为3天的总交易金额，如果是当天上榜，则为当天交易金额
+        # 去掉价格，涨幅和换手率后准确率下降厉害由0.05下降到0.6,主要是价格的作用
+        # 20字段，去除日期 代码18,只查询60和00开头的
+        cu.execute("select "
+                   "date,"
+                   "code,"
+                   "buy,"
+                   "sell,"
+                   "net_buy,"
+                   "accum_amount,"
+                   "billboard_deal_amt,"
+                   "deal_amount_ratio,"
+                   "caption_mark,"
+                   "deal_net_ratio,"
+                   "free_market_cap,"
+                   "buy_num,"
+                   "sell_num,"
+                   "lgt_mark,"
+                   "buy_inst,"
+                   "sell_inst,"
+                   "net_inst,"
+                   "buy_lgt,"
+                   "sell_lgt,"
+                   "net_lgt "
+                   "FROM dragon_tiger_all_inst_lgt2_181001_211130 WHERE code like '00%' or code like '60%' ORDER BY date ASC;")
+        if num:
+            rows = cu.fetchmany(num)
+        else:
+            rows = cu.fetchall()
+        print(rows[0][:2], rows[0][-4:])
         st = []
+        """['2020-11-19 00:00:00', '600158', '中体产业',
+        275485153.39,
+        182177486.99,
+        93307666.4,
+        2184420403,
+        15.97,
+        9.9862,
+        457662640.38,
+        20.95121615562,
+        '非ST、*ST和S证券连续三个交易日内收盘价格涨幅偏离值累计达到20%的证券',  1,
+        8.9247,
+        4.271506815806,
+        10500201410.24,
+        1, 0,  0,
+        56259952.25,  0,  56259952.25, 0, 0, 0]
+"""
         for ii in rows:
             ii = list(ii)
-            ii.pop(10)
-            ii.pop(9)
-            ii.pop(8)
-            ii.pop(2)
             # print(ii)
+            # ii.pop(11)
+            # ii.pop(2)
             # ii[0] =2021 - 07 - 01, ii[1]= 002176
-            # cu.execute("select * FROM dragon_tiger_k where date>=? and code=?", (ii[0], ii[1]))
-            cu.execute("select * FROM dragon_tiger_k where date>? and code=?", (ii[0], ii[1]))
-            ro = cu.fetchmany(1)
-            ii.pop(1)
-            ii.pop(0)
-            for i in ro:
-                if i[11] == "1":
-                    if ii[0] == "" or ii[1] == "" or ii[2] == "" or ii[3] == "" or ii[4] == "" or ii[5] == "" or ii[6] == "" or ii[7] == "" or ii[8] == "":
-                        print("数据空", i[1])
-                    else:
-                        # print("rr", ii[4])
-                        if float(ii[4]) < 31:
-                            ii.append(i[2])  # open
-                            # ii.append(i[3])  # high
-                            # ii.append(i[4])  # low
-                            # ii.append(i[5])  # close
-                            st.append(ii)
+            if len(ii[0]) > 10:  # 切出日期
+                d = ii[0][:10]
+            # big="baostock"加(sh. or sz.)code加(sh or sz) or (SZ or SH)
+            c = tools.add_sh(ii[1], big="baostock")
+            # cu.execute("select * FROM dragon_tiger_all_inst_lgt2k where date>=? and code=?", (d, c))
+            # 如果当天+1为交易日则返回,否则返回两周内最近一个交易日add_subtract="subtract"后退
+            # f = "d"返回2021 - 07 - 01, f="t"为2021 - 07 - 01 00：00：00.
+            d_add = tools.get_late_trade_day(d, add_subtract="add", f="t").strftime('%Y-%m-%d')
+            ff = ""
+            if ff:  #  带日期和代码，方便校对，
+                cu.execute("select date,code,open,high,low,close,preclose,volume,amount,turn,tradestatus,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM FROM dragon_tiger_all_inst_lgt2k where date>=? and code=?", (d, c))
+                ro = cu.fetchmany(2)
+                print("ro", ii)
+                ii.pop(1)
+                ii.pop(0)
+                print(ro[0])  # ro[0]为第1条数据
+                rr = list(ro[0])
+                rr.pop(10)
+                print(rr)  # ro[0]为第1条数据
+                ii += rr
+                print("ro", ii)
+                """[('2020-11-20', 'sh.600158', '16.6411275600', '16.6411275600', '14.8542278400',
+                '15.9423399600', '15.9423399600', '92726379', '1457152307.4500', '2', '14.103000',
+                '1', '0.000000', '102.819343', '7.555802', '9.524189', '79.360660', '0')]"""
+                r = ro[1]  # ro[1]为第2条数据
+                print(r)
+                if r[10] == "1":  # 为第2条数据的第11为是否交易，1为交易状态,0为停牌
+                    ii.append(r[2])  # open
+                    # ii.append(i[3])  # high
+                    # ii.append(i[4])  # low
+                    # ii.append(i[5])  # close
+                    # ii.append(i[6])  # preclose
+                    dd = ""
+                    if dd:
+                        f = float(i[5])
+                        cc = (f - float(i[6])) / f  # 涨幅
+                        if cc == 0:
+                            cc = 0.001
+                            # print(c, d + "+1天涨幅0")
+                        ii.append(cc)
+                    dd = ""
+                    if dd:
+                        if (cc > 0.02) and (cc < 31):
+                            cc = 2  # 表示上涨大于2%
+                        elif (cc > -31) and (cc <= 0.02):
+                            cc = 1
                         else:
-                            print("涨幅大于30", i[1])
+                            cc = 0
+                            print(cc, c + "涨幅+1天" + d)
+                        ii.append(cc)
+                    st.append(ii)
                 else:
-                    print("停牌", i[1])
-        print(st[0:3])
+                    print("停牌", r[0:2])
+            else:  # ff为空时不带日期和代码,13字段,加交易状态为14
+                cu2.execute(
+                    "select open,high,low,close,preclose,volume,amount,turn,tradestatus,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM FROM dragon_tiger_all_inst_lgt2k_181001_211130 where (date=? or date=?) and code=?",
+                    (d, d_add, c))
+                ro = cu2.fetchall()
+                # ro = cu2.fetchmany(2)
+                if ro.__len__() != 2:
+                    print(d + c + ":", ro.__len__())
+                # print("ro", ii)
+                dd = "bb"
+                if dd:
+                    ii.pop(1)  # 去除ii里的日期和代码
+                    ii.pop(0)
+                    # print(ro[0])  # ro[0]为第1条数据
+                    rr = list(ro[0])
+                    rr.pop(8)  # 去除ro第一条数据里的交易状态1
+                    # print("rr", rr)  # ro[0]为第1条数据
+                    ii += rr
+                    # print("ro", ii)
+                    """[('2020-11-20', 'sh.600158', '16.6411275600', '16.6411275600', '14.8542278400',
+                    '15.9423399600', '15.9423399600', '92726379', '1457152307.4500', '2', '14.103000',
+                    '1', '0.000000', '102.819343', '7.555802', '9.524189', '79.360660', '0')]"""
+                    r = ro[1]  # ro[1]为第2条数据
+                    # print("r", r)
+                    if r[8] == "1":  # 为第2条数据的第11为是否交易，1为交易状态,0为停牌
+                        ii.append(r[0])  # open
+                        # ii.append(r[1])  # high
+                        # ii.append(r[2])  # low
+                        # ii.append(r[3])  # close
+                        # ii.append(i[6])  # preclose
+                        dd = ""
+                        if dd:
+                            f = float(i[5])
+                            cc = (f - float(i[6])) / f  # 涨幅
+                            if cc == 0:
+                                cc = 0.001
+                                # print(c, d + "+1天涨幅0")
+                            ii.append(cc)
+                        dd = ""
+                        if dd:
+                            if (cc > 0.02) and (cc < 31):
+                                cc = 2  # 表示上涨大于2%
+                            elif (cc > -31) and (cc <= 0.02):
+                                cc = 1
+                            else:
+                                cc = 0
+                                print(cc, c + "涨幅+1天" + d)
+                            ii.append(cc)
+                        st.append(ii)
+                    else:
+                        print("停牌", r[0:2])
+        cu.close()
+        cu2.close()
+        print("第一条数据的后部分", st[0][-5:])
+        # print("测试数据开始")  # 测试数据开始y_test (250, 1)
+        # print(rows[2250][:2], rows[2250][-4:])
+        # print(st[2250][-5:])
+        print("测试数据最后一个")
+        print(rows[-1][:2], rows[-1][-4:])
+        print(st[-1][-5:])
         float_data = np.zeros((len(st), len(st[0])))
         # print(float_data[:, 1])
         for i, line in enumerate(st):
@@ -1033,7 +1241,14 @@ def stock_predict_read_data(p):
                 float_data[i, :] = values
             except:
                 print("无法float", line)
+        print("数据库查询字段个数：", float_data.shape[1]+1)
         print("float_data", float_data.shape)
+        print("前5开盘价", float_data[:5, -1])
+        """检查数据中是否有inf或者nan的情况。普通numpy数组可用,np.isfinite有限返回true，否则false
+                np.isfinite([np.log(-1.),1.,np.log(0)])= array([False,  True, False]),,
+                np.any()是或操作，任意一个元素为True，输出为True。np.all()是与操作，所有元素为True，输出为True
+        """
+        print("isfinite", np.all(np.isfinite(float_data)))
         return float_data
 
 
@@ -1062,7 +1277,7 @@ def stock_predict_normal(float_data):
     return x_train, y_train, x_test, y_test
 
 
-# 股票预测可视化
+# 训练loss可视化
 def stock_predict_plt(history):
     loss = history.history['loss']
     val_loss = history.history['val_loss']
@@ -1076,8 +1291,7 @@ def stock_predict_plt(history):
 
 
 # 密集连接模型DNN
-def stock_predict_dnn(x_train, y_train, model):
-    from tensorflow.keras.optimizers import RMSprop
+def stock_predict_dnn(x_train, y_train, model, p, epochs):
     """input_shape检索图层的输入形状. 仅适用于图层只有一个输入,即它是否连接到一个输入层,或者所有输入具有相同形状的情况
     ReLU函数(Rectified Linear Units)其实就是一个取最大值函数，注意这并不是全区间可导的
     激活函数是用来加入非线性因素的，解决线性模型所不能解决的问题"""
@@ -1088,11 +1302,37 @@ def stock_predict_dnn(x_train, y_train, model):
     表示了预测值的平均误差幅度，而不需要考虑误差的方向（注：平均偏差误差MBE则是考虑的方向的误差，是残差的和）
     metrics采用mae，代表绝对误差，即预测值和目标值的差值的绝对值。
     adam (Adaptive Moment Estimation)吸收了Adagrad（自适应学习率的梯度下降算法）和动量梯度下降算法的优点，
-    既能适应稀疏梯度（即自然语言和计算机视觉问题），又能缓解梯度震荡的问题"""
-    # model.compile(optimizer=RMSprop(), loss='mae')
+    既能适应稀疏梯度（即自然语言和计算机视觉问题），又能缓解梯度震荡的问题
+
+    在监督学习中我们使用梯度下降法时，学习率是一个很重要的指标，因为学习率决定了学习进程的快慢（也可以看作步幅的大小）。
+    如果学习率过大，很可能会越过最优值，反而如果学习率过小，优化的效率可能很低，导致过长的运算时间，
+    所以学习率对于算法性能的表现十分重要。而优化器keras.optimizers.Adam()是解决这个问题的一个方案。
+    其大概的思想是开始的学习率设置为一个较大的值，然后根据次数的增多，动态的减小学习率，以实现效率和效果的兼得
+keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.0)
+lr：float> = 0.学习率
+beta_1：float，0 <beta <1。一般接近1。一阶矩估计的指数衰减率
+beta_2：float，0 <beta <1。一般接近1。二阶矩估计的指数衰减率
+epsilon：float> = 0,模糊因子。如果None，默认为K.epsilon()。该参数是非常小的数，其为了防止在实现中除以零
+decay：float> = 0,每次更新时学习率下降"""
+    # model.compile(optimizer=keras.optimizers.RMSprop(), loss='mae')
+    # model.compile(loss='mae', optimizer=keras.optimizers.Adam(0.001))
     model.compile(loss='mae', optimizer='adam')
     # model.compile(loss='mae', optimizer='adam', metrics=['mae'])
     # model.compile(loss='mae', optimizer='adam ', metrics=['accuracy'])
+    checkpoint_save_path = r"{}\rnn_stock.ckpt".format(p)
+    print('---', checkpoint_save_path)
+    if os.path.exists(checkpoint_save_path + '.index'):
+        print('-------------load the model-----------------')
+        model.load_weights(checkpoint_save_path)
+    # 使用参数save_weights_only时：设置True，则调用model.save_weights()；设置False，则调用model.save()；
+    # monitor如果val_loss 提高了就会保存，没有提高就不会保存
+    # save_best_only：当设置为True时，将只保存在验证集上性能最好的模型
+    cp_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_save_path, save_weights_only=True, save_best_only=True, monitor='val_loss')
+    # batch_size：整数，指定进行梯度下降时每个batch包含的样本数。训练时一个batch的样本会被计算一次梯度下降，
+    # 使目标函数优化一步。epochs：整数，训练的轮数，每个epoch会把训练集轮一遍。
+    # callbacks：list，其中的元素是keras.callbacks.Callback的对象。
+    # 这个list中的回调函数将会在训练过程中的适当时机被调用，参考回调函数
+    # validation_data：形式为（X，y）的tuple，是指定的验证集，此参数将覆盖validation_spilt
     """fit(): Method calculates the parameters μ and σ and saves them as internal objects.
 解释：简单来说，就是求得训练集X的均值，方差，最大值，最小值,这些训练集X固有的属性。
 
@@ -1110,6 +1350,145 @@ fit(x,y)传两个参数的是有监督学习的算法，fit(x)传一个参数的
 必须先用fit_transform(trainData)，之后再transform(testData)如果直接transform(testData)，程序会报错
 如果fit_transfrom(trainData)后，使用fit_transform(testData)而不transform(testData)，虽然也能归一化，
 但是两个结果不是在同一个“标准”下的，具有明显差异。(一定要避免这种情况)
+
+validation_freq=1, 指使用验证集实施验证的频率。当等于1时代表每个epoch结束都验证一次
+verbose：日志展示，整数
+               0 :为不在标准输出流输出日志信息
+               1 :显示进度条
 """
-    history = model.fit(x=x_train, y=y_train, epochs=100, batch_size=200, validation_split=0.1)
+    history = model.fit(x=x_train, y=y_train, epochs=epochs, batch_size=200, validation_split=0.1, callbacks=[cp_callback],
+                        validation_freq=1, verbose=0)
+    # model.summary()
+    get_para_save(model, p)  # 参数提取写入
     return history
+
+
+# 参数提取,写入
+def get_para_save(model, p):
+    """获取可训练变量t_vars = tf.trainable_variables()
+获取全部变量，包含声明training=False的变量all_vars = tf.global_variables()"""
+    file = open(r"{}\weights.txt".format(p), 'w')
+    for v in model.trainable_variables:
+        file.write(str(v.name) + '\n')
+        file.write(str(v.shape) + '\n')
+        file.write(str(v.numpy()) + '\n')
+    file.close()
+
+
+# 预测数据可视化对比
+def predict_curve(predicted_data, real_data, p):
+    epochs = range(1, len(predicted_data) + 1)
+    plt.figure(figsize=(16, 9))
+    plt.plot(epochs, real_data, color='red', label='real')
+    plt.plot(epochs, predicted_data, color='green', label='Predicted')
+    plt.title('Stock Price Prediction')
+    # plt.xlabel('Time')
+    # plt.ylabel('Stock Price')
+    plt.legend()
+    plt.savefig(r"{}\real_predict.png".format(p))
+    plt.show()
+
+
+#  评估误差
+def evaluate_error(y_pred, y_true):
+    from sklearn.metrics import mean_squared_error, mean_absolute_error
+    import math
+    # y_pred, y_true = y_pred[0:5], y_true[0:5]
+    # print(y_pred)
+    # print(y_true)
+    # calculate MSE 均方误差 ---> E[(预测值-真实值)^2] (预测值减真实值求平方后求均值)
+    # print(re.shape)
+    # y_pred = [[0.8], [0.5], [0.2], [0.3], [0]]
+    # y_true = [0.82, 0.51, 0.19, 0.28, 0]
+    # y_pred = np.array(y_pred).flatten()  # 二维数组变成一维数组（np.array类型
+    # y_pred = y_pred.flatten()  # 二维数组变成一维数组（np.array类型
+    # print('均', y_pred)
+    mse = mean_squared_error(y_pred, y_true)
+    # calculate RMSE 均方根误差--->sqrt[MSE]    (对均方误差开方)
+    rmse = math.sqrt(mean_squared_error(y_pred, y_true))
+    # calculate MAE 平均绝对误差----->E[|预测值-真实值|](预测值减真实值求绝对值后求均值）
+    mae = mean_absolute_error(y_pred, y_true)
+    print('均方误差: %.6f' % mse)
+    print('均方根误差: %.6f' % rmse)
+    print('平均绝对误差: %.6f' % mae)
+    # rr = np.mean(y_true)
+    print('平均股价: %.6f' % np.mean(y_true))
+    er = np.mean(np.abs((y_pred - y_true) / y_true))
+    print('预测平均误差百分比: %.6f' % er)
+    print('精确度: %.6f' % (1-er))
+    dd = ""
+    if dd:
+        s = 0
+        for index, item in enumerate(y_true):
+            # print(index, item)
+            pp = y_pred[index]
+            if item == 1:
+                if (pp > 0.7) and (pp < 1.3):
+                    s += 1
+            elif item == 2:
+                if (pp > 1.7) and (pp < 2.3):
+                    s += 1
+            else:
+                pass
+        print(s)
+
+
+#
+def robot_my_test():
+    from collections import OrderedDict
+    import pandas as pd
+    # 数据集
+    examDict = {
+        '学习时间': [0.50, 0.75, 1.00, 1.25, 1.50, 1.75, 1.75, 2.00, 2.25,
+                 2.50, 2.75, 3.00, 3.25, 3.50, 4.00, 4.25, 4.50, 4.75, 5.00, 5.50],
+        '分数': [10, 22, 13, 43, 20, 22, 33, 50, 62, 48, 55, 75, 62, 73, 81, 76, 64, 82, 90, 93]
+    }
+    examOrderDict = OrderedDict(examDict)
+    examDf = pd.DataFrame(examOrderDict)
+    # 查看前五行
+    print(examDf.head())
+    exam_X = examDf.loc[:, '学习时间']
+    exam_Y = examDf.loc[:, '分数']
+    # 绘制散点图
+    import matplotlib.pyplot as plt
+    # 散点图
+    plt.scatter(exam_X, exam_Y, color='b', label='exam data')
+    # 添加图标标签
+    plt.xlabel("hours")
+    plt.ylabel("score")
+    # 画图
+    plt.show()
+    corrDf = examDf.corr()
+    print(corrDf)
+
+
+#  相关性分析
+def robot_relevance():
+    import os
+    from mywagtailone.datatables.tool import mysetting
+    if os.path.isfile(mysetting.DATA_TABLE_DB):
+        # 股票数据的读取和整理 p为数据库路径 num为数据量大小num=""为全部
+        float_data = stock_predict_read_data(mysetting.DATA_TABLE_DB, num="")
+        # dd = float_data[:, 2]
+        # print(d[:3])
+        # print(dd[:3])
+        # print(d[:, :1])
+        # print(d[:, -1])
+        # print(d[:, -1:])
+        # x_simple = dd
+        # y_simple = float_data[:, -1]
+        x_train, y_train, x_test, y_test, sc2 = min_max_scale(float_data)  # 标准化或归一化
+        print(x_train[:3])
+        print(x_train[:3, 8])
+        # print(y_train[:3])
+        # print(y_train[:3, 0])
+        x_train = x_train[:, 20]
+        y_train = y_train[:, 0]
+        plt.figure()
+        plt.plot(x_train, y_train, 'bo', label='up range')
+        # plt.plot(x_train, y_train, 'bo', label='up range')
+        plt.title('Training and Validation loss')
+        plt.legend()
+        plt.show()
+        my_rho = np.corrcoef(x_train, y_train)
+        print(my_rho)

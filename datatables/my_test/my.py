@@ -1,6 +1,6 @@
 from mywagtailone.datatables.my_test import main_test
 if __name__ == "__main__":
-    # p = r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db"
+    p = r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db"
     # p = r"D:\my2\user.db"
     # main_test.test_sq_lite(p)
     # main_test.test_my()
@@ -11,19 +11,26 @@ if __name__ == "__main__":
     # net = "http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/YYBJXMX/GetYYBJXMX?js=&sortfield=&sortdirec=-1&pageSize={}&pageNum=1&tkn=eastmoney&salesCode=80601499&tdir=&dayNum=&startDateTime={}&endDateTime={}&cfg=yybjymx"
     # 上海
     # net = "http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/YYBJXMX/GetYYBJXMX?js=&sortfield=&sortdirec=-1&pageSize={}&pageNum=1&tkn=eastmoney&salesCode=80403915&tdir=&dayNum=&startDateTime={}&endDateTime={}&cfg=yybjymx"
+    # 读东财陆股通龙虎榜
     # main_test.east_dragon_tiger_new(net, 3, "2021-09-26", "2021-09-27", f="")
-    # 机构,只能1月求一次
-    # net = "http://data.eastmoney.com/DataCenter_V3/stock2016/DailyStockListStatistics/pagesize={},page=1,sortRule=-1,sortType=PBuy,startDate={},endDate={},gpfw=0,js=.html?rt=26985157"
+    # 读东财机构,all,陆股通龙虎榜
+    # main_test.east_dragon_tiger4()
+    # main_test.read_dragon_tiger_robot_stock("inst")  # 读东财机构,all,陆股通龙虎榜表入robot stock 数据表
+    # main_test.read_dragon_tiger_robot_stock("lgt")  # 读东财机构,all,陆股通龙虎榜表入robot stock 数据表
+    # 读东财龙虎榜all
+    # main_test.east_dragon_tiger_all(date="2021-11-19")
     # main_test.east_dragon_tiger_new(net, 1000, "2021-07-01", "2021-07-31", f="institution")
     # main_test.dragon_tiger_into_tdx()
     # main_test.read_file(r"D:\my2\backup\col_cfgwarn.dat")
-    # t = main_test.dragon_tiger_date_mark(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db")
+    # 读dragon_tiger_all_inst_lgt2龙虎榜日期和日k线,把k数据插入dragon_tiger_all_inst_lgt2k
+    # main_test.dragon_tiger_date_mark(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db")
     # t = main_test.test_tiger_code(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db", "2021-07-01")
-    # par = main_test.test_get_k(t, "2021-07-01", "2021-07-05")
+    # t = ["sz.001914"]
+    # par = main_test.test_get_k(t, "2019-09-20", "")  # 传入code list，获取k线数据
     # print(par)
     # # par = 0
     # main_test.test_scatter_diagram(par)
-    main_test.dragon_tiger_add_mark(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db")
+    # main_test.dragon_tiger_add_mark(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db")
 
     def stock_robot_test(p):
         import numpy as np
@@ -352,7 +359,7 @@ if __name__ == "__main__":
             history = model.fit(x_train, y_train, batch_size=62, epochs=4, validation_data=(x_test, y_test),
                                 validation_freq=1, callbacks=[cp_callback])
             model.summary()
-            get_para(model)  # 参数提取
+            get_para(model)  # 参数提取写入
             l = "c"
             if l:
                 plt_curve(history, plt)  # 绘制曲线
@@ -377,7 +384,7 @@ if __name__ == "__main__":
         return test_date, test_set, training_set
 
 
-    # 参数提取
+    # 参数提取,写入
     def get_para(model):
         file = open(r"D:\my2\my_test\weights.txt", 'w')
         for v in model.trainable_variables:

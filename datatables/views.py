@@ -2290,80 +2290,101 @@ def research_organization(start_date="", end_date="", page_size="50"):
     return "机调" + str(l)
 
 
+# 读东财龙虎榜净买入大于0
+def east_dragon_tiger_all(dat):
+    # 龙虎榜净买入排序,一次只能读取500条
+    net = "https://datacenter-web.eastmoney.com/api/data/v1/get?callback=&sortColumns=BILLBOARD_NET_AMT%2CTRADE_DATE%2CSECURITY_CODE&sortTypes=-1%2C-1%2C1&pageSize={}&pageNumber={}&reportName=RPT_DAILYBILLBOARD_DETAILS&columns=SECURITY_CODE%2CSECUCODE%2CSECURITY_NAME_ABBR%2CTRADE_DATE%2CEXPLAIN%2CCLOSE_PRICE%2CCHANGE_RATE%2CBILLBOARD_NET_AMT%2CBILLBOARD_BUY_AMT%2CBILLBOARD_SELL_AMT%2CBILLBOARD_DEAL_AMT%2CACCUM_AMOUNT%2CDEAL_NET_RATIO%2CDEAL_AMOUNT_RATIO%2CTURNOVERRATE%2CFREE_MARKET_CAP%2CEXPLANATION%2CD1_CLOSE_ADJCHRATE%2CD2_CLOSE_ADJCHRATE%2CD5_CLOSE_ADJCHRATE%2CD10_CLOSE_ADJCHRATE&source=WEB&client=WEB&filter=(TRADE_DATE%3C%3D%27{}%27)(TRADE_DATE%3E%3D%27{}%27)"
+    page = 1
+    lis = []
+    for t in range(1, 5):
+        if t > page:
+            break
+        print("t", t)
+        dragon_t = requests.get(net.format(500, t, dat, dat))
+        dragon_tiger = dragon_t.text
+        # print(dragon_tiger)
+        if dragon_t.status_code == 200 and dragon_tiger:
+            dragon_tiger = demjson.decode(dragon_tiger)
+            """result: {pages: 2, data
+            市场总成交金额 ACCUM_AMOUNT: 3599125579
+            买入金额 BILLBOARD_BUY_AMT: 506971623.79
+            龙虎榜成交额 BILLBOARD_DEAL_AMT: 732885293.85
+            净买入金额 BILLBOARD_NET_AMT: 281057953.73
+            卖出金额 BILLBOARD_SELL_AMT: 225913670.06
+            CHANGE_RATE: 10.0352
+            CLOSE_PRICE: 12.5
+            D1_CLOSE_ADJCHRATE: null
+            D2_CLOSE_ADJCHRATE: null
+            D5_CLOSE_ADJCHRATE: null
+            D10_CLOSE_ADJCHRATE: null
+            成交额占总成交比 DEAL_AMOUNT_RATIO: 20.362870863029
+            净买额占总成交比 DEAL_NET_RATIO: 7.809062161373
+            EXPLAIN: "实力游资买入，成功率43.90%"
+            EXPLANATION: "日涨幅偏离值达到7%的前5只证券"
+            总市值 FREE_MARKET_CAP: 49627862500
+            SECUCODE: "000723.SZ"
+            SECURITY_CODE: "000723"
+            SECURITY_NAME_ABBR: "美锦能源"
+            TRADE_DATE: "2021-11-19 00:00:00"
+            换手率 TURNOVERRATE: 7.4719"""
+            d = dragon_tiger.get('result', '')
+            if t == 1:  # 第一页时获取总页数
+                page = d.get('pages', '')
+                print("page", page)
+            dr = d.get('data', '')
+            print("dr", len(dr))
+            # dr = ""
+            if dr:
+                for i in dr:
+                    # print(i.get('BILLBOARD_NET_AMT', '0'))
+                    if float(i.get('BILLBOARD_NET_AMT', '0')) > 0 and float(i.get('CHANGE_RATE', '0')) > 0:
+                        # print(i.get('NET_BUY_AMT', '0'))
+                        # c = i.get('SECURITY_CODE', '')
+                        # code = code_add(i.get('SECURITY_CODE', ''))
+                        lis.append(code_add(i.get('SECURITY_CODE', '')) + '\n')
+                        # print(c)
+    return lis
+
+
 # 读东财龙虎榜 # 净买入 'JmMoney': '63519965.72',涨幅 'Chgradio': '9.98',
-def east_dragon_tiger(date):
-    dragon_tiger = requests.get("http://data.eastmoney.com/DataCenter_V3/stock2016/TradeDetail/pagesize=200,page=1,"
-                                "sortRule=-1,sortType=,startDate=" + date + ",endDate=" + date + ",gpfw=0,"
-                                                                                                 "js=.html?rt=26947717")
-    #  读入机构龙虎榜尽买入
-    organization_dragon_tiger = requests.get("http://data.eastmoney.com/DataCenter_V3/stock2016/DailyStockListStatistics/pagesize=100,page=1,sortRule=-1,sortType=PBuy,startDate=" + date + ",endDate=" + date + ",gpfw=0,js=.html?rt=26985157")
-    print(organization_dragon_tiger)
-    if dragon_tiger.status_code == 200 and organization_dragon_tiger.status_code == 200:
-        dragon_tiger_list = {}
-        for item in dragon_tiger.json().get('data', ''):
-            if isfloat(item.get('JmMoney', '0')) > 10000000:
-                code = code_add(item.get('SCode', ''))
-                # print(code)
-                dragon_tiger_list[code+'\n'] = float(item.get('JmMoney', '0'))
-        tiger_list = dict(sorted(dragon_tiger_list.items(), key=lambda x: x[1], reverse=True)).keys()  # 返回的是list 按字典集合中，每一个元组的第二个元素排列。
-        tiger_list = list(tiger_list)
-        # print(tiger_list)
-        print(len(tiger_list))
-
-        dragon_tiger_list2 = {}
-        for item in organization_dragon_tiger.json().get('data', ''):
-            if isfloat(item.get('PBuy', '0')) > 10000000:
-                code = code_add(item.get('SCode', ''))
-                dragon_tiger_list2[code + '\n'] = float(item.get('PBuy', '0'))
-        dragon_tiger_list2['1' + date + '\n'] = 0
-        tiger_list2 = dict(sorted(dragon_tiger_list2.items(), key=lambda x: x[1], reverse=True)).keys()  # 返回的是list 按字典集合中，每一个元组的第二个元素排列。
-        tiger_list2 = list(tiger_list2)
-        # print(tiger_list2)
-        print(len(tiger_list2)-1)
-        i = 0
-        for each in tiger_list2:
-            if each not in tiger_list:
-                tiger_list.append(each)
-                i += 1
-        # print(tiger_list)
-        is_write_stock('DRAGON_TIGER.blk', tiger_list, "write")
-        # combine_code = read_file(r"D:\myzq\axzq\T0002\blocknew\combine.blk")
-        # if combine_code:
-        #     dragon_tiger_contract = sorted(set(tiger_list).intersection(combine_code), key=lambda x: tiger_list.index(x))
-        #     print(len(dragon_tiger_contract), "交集后股数")
-        #     # print(dragon_tiger_contract)
-        #     is_write_stock('dragon_tiger_contract.blk', dragon_tiger_contract, "write")
-        #     return "总=" + str(len(tiger_list)-1) + "机构=" + str(i-1) + "交集=" + str(len(dragon_tiger_contract))
-        return "总" + str(len(tiger_list)-1) + "机构" + str(i-1)
-    return ""
-
-
-# 代替上面east_dragon_tiger，读东财龙虎榜 # 净买入 'JmMoney': '63519965.72',涨幅 'Chgradio': '9.98',
 def east_dragon_tiger_new(da):
-    li = east_dragon_tiger_new_son("http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/YYBJXMX/GetYYBJXMX?js=&sortfield=&sortdirec=-1&pageSize=50&pageNum=1&tkn=eastmoney&salesCode=80601499&tdir=&dayNum=&startDateTime={}&endDateTime={}&cfg=yybjymx".format(da, da))
-    ss = len(li)  # 深
-    li += east_dragon_tiger_new_son("http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/YYBJXMX/GetYYBJXMX?js=&sortfield=&sortdirec=-1&pageSize=50&pageNum=1&tkn=eastmoney&salesCode=80403915&tdir=&dayNum=&startDateTime={}&endDateTime={}&cfg=yybjymx".format(da, da))
-    sss = len(li) - ss  # 沪
-    # print(sss)
-    # 读东财龙虎榜 机构
-    organization_dragon_tiger = requests.get("http://data.eastmoney.com/DataCenter_V3/stock2016/DailyStockListStatistics/pagesize=100,page=1,sortRule=-1,sortType=PBuy,startDate=" + da + ",endDate=" + da + ",gpfw=0,js=.html?rt=26985157")
-    # print(organization_dragon_tiger)
-    if organization_dragon_tiger and organization_dragon_tiger.status_code == 200:
-        dragon_tiger_list2 = {}
-        for item in organization_dragon_tiger.json().get('data', ''):
-            if isfloat(item.get('PBuy', '0')) > 10000000:
-                code = code_add(item.get('SCode', ''))
-                dragon_tiger_list2[code + '\n'] = float(item.get('PBuy', '0'))
-        dragon_tiger_list2['1' + da + '\n'] = 0  # 最后加日期，给页面打开龙虎榜用
-        tiger_list2 = dict(sorted(dragon_tiger_list2.items(), key=lambda x: x[1], reverse=True)).keys()
-        tiger_list2 = list(tiger_list2)
-        i = 0
-        for each in tiger_list2:
-            if each not in li:
-                li.append(each)
-                i += 1
-    is_write_stock('DRAGON_TIGER.blk', li, "write")
-    return str(len(li)-1) + "沪" + str(sss) + "深" + str(ss) + "机" + str(len(tiger_list2) - 1) + "独机" + str(i-1)
+    lis = east_dragon_tiger_all(da)  # 返回龙虎榜净买入大于0
+    if lis:
+        sleep(2)
+        li = east_dragon_tiger_new_son("http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/YYBJXMX/GetYYBJXMX?js=&sortfield=&sortdirec=-1&pageSize=50&pageNum=1&tkn=eastmoney&salesCode=80601499&tdir=&dayNum=&startDateTime={}&endDateTime={}&cfg=yybjymx".format(da, da))
+        li = [i for i in li if i in lis]
+        # print("lis", li)
+        ss = len(li)  # 深
+        sleep(2)
+        uu = east_dragon_tiger_new_son("http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/YYBJXMX/GetYYBJXMX?js=&sortfield=&sortdirec=-1&pageSize=50&pageNum=1&tkn=eastmoney&salesCode=80403915&tdir=&dayNum=&startDateTime={}&endDateTime={}&cfg=yybjymx".format(da, da))
+        li += [i for i in uu if i in lis]
+        sss = len(li) - ss  # 沪
+        # print(sss)
+        sleep(2)
+        # 读东财龙虎榜 机构
+        organization_dragon_tiger = requests.get("http://data.eastmoney.com/DataCenter_V3/stock2016/DailyStockListStatistics/pagesize=100,page=1,sortRule=-1,sortType=PBuy,startDate=" + da + ",endDate=" + da + ",gpfw=0,js=.html?rt=26985157")
+        # print(organization_dragon_tiger)
+        if organization_dragon_tiger and organization_dragon_tiger.status_code == 200:
+            dragon_tiger_list2 = {}
+            org = organization_dragon_tiger.json().get('data', '')
+            for item in org:
+                if isfloat(item.get('PBuy', '0')) > 0:  # 净买入大于0
+                    code = code_add(item.get('SCode', '') + '\n')
+                    # print("out", code)
+                    if code in lis:
+                        # print(code)
+                        dragon_tiger_list2[code] = float(item.get('PBuy', '0'))
+                        # dragon_tiger_list2[code + '\n'] = float(item.get('PBuy', '0'))
+            dragon_tiger_list2['1' + da + '\n'] = 0  # 最后加日期，给页面打开龙虎榜用
+            tiger_list2 = dict(sorted(dragon_tiger_list2.items(), key=lambda x: x[1], reverse=True)).keys()
+            tiger_list2 = list(tiger_list2)
+            i = 0
+            for each in tiger_list2:
+                if each not in li:
+                    li.append(each)
+                    i += 1
+        is_write_stock('DRAGON_TIGER.blk', li, "write")
+        return str(len(li)-1) + "沪" + str(sss) + "深" + str(ss) + "机" + str(len(tiger_list2) - 1) + "独机" + str(i-1)
 
 
 # 读东财陆股通龙虎榜
@@ -2380,7 +2401,7 @@ def east_dragon_tiger_new_son(net):
                 ii = item.split("|")
                 # print(ii[17])
                 # print(ii[10])
-                if isfloat(ii[17]) > 10000000:
+                if isfloat(ii[17]) > 0:  # 净买入大于0
                     code = code_add(ii[10])
                     # print(code)
                     dragon_tiger_list[code + '\n'] = float(ii[17])
@@ -2388,10 +2409,10 @@ def east_dragon_tiger_new_son(net):
             # 返回的是list 按字典集合中，每一个元组的第二个元素排列。
             tiger_list = dict(sorted(dragon_tiger_list.items(), key=lambda x: x[1], reverse=True)).keys()
             tiger_list = list(tiger_list)
-            print(tiger_list)
-            print("陆股通龙虎榜", len(tiger_list))
+            # print(tiger_list)
+            # print("陆股通龙虎榜", len(tiger_list))
             return tiger_list
-    print("陆股通龙虎榜为空")
+    # print("陆股通龙虎榜为空")
     return []
 
 
@@ -3230,34 +3251,6 @@ def search_integration(request):
         return HttpResponse()
 
 
-# def shgtDf2021():
-#     data = ShgtDf2021.objects.all()[:200].values()
-#     total_length = ShgtDf2021.objects.all()[:200].count()
-#     print(total_length)
-#
-#     # re = json.dumps(list(aa), ensure_ascii=False)
-#     re = json.dumps({"data": list(data), "iTotalDisplayRecords": total_length}, ensure_ascii=False)
-#     # print(re)
-#     # print(getType(re))
-#     return mark_safe(re)
-
-
-# def queryset_json(query, parameter, para):  # 默认为return list and not mark_safe
-#     data = query.values()
-#     # total_length = ShgtDf2021.objects.all()[:200].count()
-#     # print(data)
-#     if parameter == 'dict_json':
-#         re = json.dumps({"data": list(data)}, ensure_ascii=False)
-#     elif parameter == 'list_json':  # parameter=2不加data
-#         re = json.dumps(list(data), ensure_ascii=False)
-#     elif parameter == 'dict':  # parameter=3返回字典，不json化
-#         re = {"data": list(data)}
-#     else:
-#         re = list(data)
-#     if para == 'mark_safe':
-#         return mark_safe(re)
-#     else:
-#         return re
 TOTAL = ''
 
 
@@ -3359,18 +3352,6 @@ def my_custom_sql(request):
     return {'rows': res, 'total': TOTAL}
 
 
-# def dict_json(query, parameter=1):  # parameter=1加data
-#     if parameter == 1:
-#         re = json.dumps({"data": query}, ensure_ascii=False)
-#     elif parameter == 2:  # parameter=2不加data
-#         re = json.dumps(query, ensure_ascii=False)
-#     else:
-#         print('错误的参数')
-#     # return re
-#     return mark_safe(re)
-
-
-# 判断变量类型的函数
 def type_of(variate):
     type = None
     if isinstance(variate, int):
@@ -3410,64 +3391,9 @@ def props(obj):
     return pr
 
 
-# 将class转dict,以_开头的也要
-# def props_with_(obj):
-#     pr = {}
-#     for name in dir(obj):
-#         value = getattr(obj, name)
-#         pr[name] = value
-#     return pr
-
-
-# dict转obj，先初始化一个obj
-# def dict2obj(obj, dict):
-#     obj.__dict__.update(dict)
-#     return obj
-
-
-# 判断是否可以float
 def isfloat(value):
     try:
         return float(value)
     except ValueError:
         print("转换float失败" + value)
         return 0
-
-
-# 判断时间范围
-# def judge_time_scope(now, start_time, end_time):
-#     # 范围时间
-#     start_time = datetime.strptime(str(now.date()) + start_time, '%Y-%m-%d%H:%M')
-#     end_time = datetime.strptime(str(now.date()) + end_time, '%Y-%m-%d%H:%M')
-#     # 判断当前时间是否在范围时间内
-#     if (now > start_time) and now < end_time:
-#         return True
-#     else:
-#         return False
-
-
-# 判断是否交易时间范围
-# def judge_trade_time(i_date):
-#     print(i_date)
-#     # 判断是否为节假日,周六日
-#     if (i_date.isoweekday() == (6 or 7)) or is_holiday(d_date(i_date.year, i_date.month, i_date.day)):
-#         return "节假日"
-#     else:
-#         if judge_time_scope(i_date, "9:25", "15:00"):
-#             return "交易时段"
-#         else:
-#             return "交易日但非交易时段"
-
-
-# 复制文件
-# def copy_file(source, target):
-#     try:
-#         shutil.copyfile(source, target)
-#         return 1
-#     except IOError as e:
-#         print("Unable to copy file. %s" % e)
-#         sys.exit(1)
-#     except:
-#         print("Unexpected error:", sys.exc_info())
-#         sys.exit(1)
-#     print("复制文件失败")
