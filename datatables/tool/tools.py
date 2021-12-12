@@ -154,76 +154,49 @@ def get_late_trade_day(d_now, add_subtract="subtract", f="d"):
     week_day = d_now.date().strftime("%A")  # % A 周几
     if week_day == "Sunday":
         if add_subtract == "subtract":
-            for i in range(2, 14):
-                if i != 7 and i != 8:
-                    if is_workday(d_now + timedelta(-i)):
-                        trade_day = (d_now + timedelta(-i))
-                        break
+            trade_day = get_late_trade_day_son(d_now, fl="sub")
         elif add_subtract == "add":
             trade_day = get_late_trade_day_son(d_now)
         else:
             print("error;", add_subtract)
     elif week_day == "Monday":
         if add_subtract == "subtract":
-            for i in range(3, 15):
-                if i != 8 and i != 9:
-                    if is_workday(d_now + timedelta(-i)):
-                        trade_day = (d_now + timedelta(-i))
-                        break
+            trade_day = get_late_trade_day_son(d_now, fl="sub")
         elif add_subtract == "add":
             trade_day = get_late_trade_day_son(d_now)
         else:
             print("error;", add_subtract)
     elif week_day == "Tuesday":
         if add_subtract == "subtract":
-            for i in range(1, 16):
-                if is_workday(d_now + timedelta(-i)):
-                    trade_day = (d_now + timedelta(-i))
-                    break
+            trade_day = get_late_trade_day_son(d_now, fl="sub")
         elif add_subtract == "add":
             trade_day = get_late_trade_day_son(d_now)
         else:
             print("error;", add_subtract)
     elif week_day == "Wednesday":
         if add_subtract == "subtract":
-            for i in range(1, 17):
-                if i != 3 and i != 4 and i != 10 and i != 11:
-                    if is_workday(d_now + timedelta(-i)):
-                        trade_day = (d_now + timedelta(-i))
-                        break
+            trade_day = get_late_trade_day_son(d_now, fl="sub")
         elif add_subtract == "add":
             trade_day = get_late_trade_day_son(d_now)
         else:
             print("error;", add_subtract)
     elif week_day == "Thursday":
         if add_subtract == "subtract":
-            for i in range(1, 18):
-                if i != 4 and i != 5 and i != 11 and i != 12:
-                    if is_workday(d_now + timedelta(-i)):
-                        trade_day = (d_now + timedelta(-i))
-                        break
+            trade_day = get_late_trade_day_son(d_now, fl="sub")
         elif add_subtract == "add":
             trade_day = get_late_trade_day_son(d_now)
         else:
             print("error;", add_subtract)
     elif week_day == "Friday":
         if add_subtract == "subtract":
-            for i in range(1, 19):
-                if i != 5 and i != 6 and i != 12 and i != 13:
-                    if is_workday(d_now + timedelta(-i)):
-                        trade_day = (d_now + timedelta(-i))
-                        break
+            trade_day = get_late_trade_day_son(d_now, fl="sub")
         elif add_subtract == "add":
             trade_day = get_late_trade_day_son(d_now)
         else:
             print("error;", add_subtract)
     elif week_day == "Saturday":  # 后退一天为周五，2= 4, 3=3, 4=2, 5=1,6,7天为周六日跳过,循环12，第12为周五
         if add_subtract == "subtract":
-            for i in range(1, 16):
-                if i != 6 and i != 7:
-                    if is_workday(d_now + timedelta(-i)):
-                        trade_day = (d_now + timedelta(-i))
-                        break
+            trade_day = get_late_trade_day_son(d_now, fl="sub")
         elif add_subtract == "add":
             trade_day = get_late_trade_day_son(d_now)
         else:
@@ -235,17 +208,66 @@ def get_late_trade_day(d_now, add_subtract="subtract", f="d"):
         return trade_day
 
 
-def get_late_trade_day_son(d_now):
+def get_late_trade_day_son(d_now, fl="add"):
     from chinese_calendar import is_workday
     timedelta = datetime.timedelta
-    for i in range(1, 19):
-        tt = d_now + timedelta(+i)
-        if is_workday(tt):
-            ww = tt.strftime("%A")  # % A 周几
-            if ww != "Sunday" and ww != "Saturday":
-                trade_day = tt
-                break
+    if fl == "add":
+        for i in range(1, 19):
+            tt = d_now + timedelta(+i)
+            if is_workday(tt):
+                ww = tt.strftime("%A")  # % A 周几
+                if ww != "Sunday" and ww != "Saturday":
+                    trade_day = tt
+                    break
+    if fl == "sub":
+        dd = d_now.strftime("%A")  # % A 周几
+        if is_workday(d_now) and dd != "Sunday" and dd != "Saturday":
+                trade_day = d_now
+        else:
+            for i in range(1, 19):
+                tt = d_now + timedelta(-i)
+                if is_workday(tt):
+                    ww = tt.strftime("%A")  # % A 周几
+                    if ww != "Sunday" and ww != "Saturday":
+                        trade_day = tt
+                        break
     return trade_day
+
+
+# 返回n天前或n天后最近一个交易日add_subtract="subtract"后退. d_now = "%Y-%m-%d"),取当天num=0，最近一天num=1
+# def get_late_trade_day_n(d_now, add_subtract="subtract", start=2, end=3, f="d"):
+def get_late_trade_day_n(d_now, add_subtract="subtract", num=1, f="d"):
+    from chinese_calendar import is_workday
+    timedelta = datetime.timedelta
+    if not isinstance(d_now, datetime.datetime):
+        d_now = datetime.datetime.strptime(d_now, "%Y-%m-%d")
+    if add_subtract == "add":
+        aa = 0
+        for i in range(0, 100):
+            tt = d_now + timedelta(+i)
+            if is_workday(tt):
+                ww = tt.strftime("%A")  # % A 周几
+                if ww != "Sunday" and ww != "Saturday":
+                    if aa == num:
+                        trade_day = tt
+                        break
+                    aa += 1
+    if add_subtract == "sub":
+        aa = 0
+        for i in range(0, 100):
+            tt = d_now + timedelta(-i)
+            if is_workday(tt):
+                ww = tt.strftime("%A")  # % A 周几
+                if ww != "Sunday" and ww != "Saturday":
+                    if aa == num:
+                        trade_day = tt
+                        break
+                    aa += 1
+    # f = "d"返回2021 - 07 - 01否则为2021 - 07 - 01 00：00：00
+    if f == "d":  # trade_day.date().strftime('%Y-%m-%d')
+        return trade_day.date()
+    else:
+        return trade_day
 
 
 # 传入路径，读取csv数据,

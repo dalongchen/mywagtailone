@@ -2,8 +2,9 @@
 (1),git add . 和 git add * 区别
     git add . 会把本地所有untrack的文件都加入暂存区，并且会根据.gitignore做过滤，
     git add * 会忽略.gitignore把任何文件都加入
+    git status //查看仓库当前的状态.(不要打开pycharm)
 
-(2),git commit -m "wrote a readme file".git status //查看仓库当前的状态.(不要打开pycharm)
+(2),git commit -m "wrote a readme file".
 
 (3),切换分支：git checkout <name>.如果是多人开发的话 需要把远程master上的代码pull下来 git pull origin master
     首先切换到master分支上git  checkout master

@@ -821,59 +821,61 @@ def evaluate_naive_method(val_steps, val_gen, std):
     print('mae=', np.mean(batch_maes)*std)
 
 
-# 股票预测 p为数据库路径
-def predict_stock(p):
+# 股票预测 p为数据库路径, is_del=0删除
+def predict_stock(p, train_num=200, is_del=1):
     if os.path.isfile(p):
-        float_data = stock_predict_read_data(p)  # 股票数据的读取和整理
-        x_train, y_train, x_test, y_test, sc2 = min_max_scale(float_data)  # 标准化或归一化
-        # print('x_train', x_train.shape)
-        # print('y_train', y_train.shape)
-        # print('x_test', x_test.shape)
-        # print('y_test', y_test.shape)
-        x_train = x_train.reshape(x_train.shape[0], 1, x_train.shape[1])  # 2维转3维
-        x_test = x_test.reshape(x_test.shape[0], 1, x_test.shape[1])
-        # print('x_train', x_train.shape)
-        print('y_test', y_test.shape)
-        # print('y_test', y_test)
-        # x_train, y_train, x_test, y_test = stock_predict_normal(float_data)  # 数据标准化，减去平均值，除以标准值,2维转3维
-        from tensorflow.keras.models import Sequential
-        model = Sequential()
-        p_save = r"D:\ana\envs\py36\mywagtailone\stock_train\{}".format(r"dense_train\min_max")
-        # p_save = r"D:\ana\envs\py36\mywagtailone\stock_train\{}".format("dense_train")
-        # dd = "g"
-        dd = ""
-        if dd:
-            import shutil
-            shutil.rmtree(p_save)  # 删除文件夹
-        history = stock_predict_dnn(x_train, y_train, model, p_save, 100)  # 密集连接模型DNN
-        # history = stock_predict_grn(x_train, y_train)  # 基于GRU的模型 门控循环单元
-        # history = stock_predict_grn_optimization(x_train, y_train)  # 门控循环单元（GRU，gated recurrent unit）优化
-        # history = stock_predict_grn_recurrent(x_train, y_train)  # 循环差堆叠 门控循环单元
-        # history = stock_predict_grn_grn(x_train, y_train)  # 使用双向GRU
-        # history = stock_predict_cnn(x_train, y_train)  # 使用一维卷积神经网络CNN
-        # history = stock_predict_cnn_gru(x_train, y_train)  # 一维卷积基与GRU融合
-        # 评估模型,不输出预测结果
-        # loss = model.evaluate(x_test, y_test)
-        # # loss, accuracy = model.evaluate(x_test, y_test)
-        # print('test loss', loss)
-        # # print('accuracy', accuracy)
-        stock_predict_plt(history)  # 训练loss可视化
-        y_test = sc2.inverse_transform(y_test)  # 原数据
-        y_test = y_test.flatten()  # 二维数组变成一维数组（np.array类型
-        print("y_test[-6:]", y_test[-6:])
-        # print("y_test[:6]", y_test[:6])
-        # 模型预测,输入测试集,输出预测结果
-        # y_pred = model.predict(x_test)
-        y_pred = model.predict(x_test, batch_size=1)
-        # print('y_pred', y_pred[:5])
-        # print('y_pred', y_pred.shape)
-        y_pred = sc2.inverse_transform(y_pred)  # 对预测数据还原---从（0，1）反归一化到原始范围
-        y_pred = y_pred.flatten()  # 二维数组变成一维数组（np.array类型
-        # print("opopo", p)
-        print("y_pred[-6:]", y_pred[-6:])
-        # print("y_pred[:6]", y_pred[:6])
-        evaluate_error(y_pred, y_test)  # 评估误差
-        predict_curve(y_pred, y_test, p_save)  # 预测数据可视化对比
+        # float_data = stock_predict_read_data(p)  # 股票数据的读取和整理0天, 当天
+        float_data = stock_predict_read_data_n(p)  # 股票数据的读取和整理1天
+        uu = "f"
+        if uu:
+            x_train, y_train, x_test, y_test, sc2 = min_max_scale(float_data)  # 标准化或归一化
+            # print('x_train', x_train.shape)
+            # print('y_train', y_train.shape)
+            # print('x_test', x_test.shape)
+            # print('y_test', y_test.shape)
+            x_train = x_train.reshape(x_train.shape[0], 1, x_train.shape[1])  # 2维转3维
+            x_test = x_test.reshape(x_test.shape[0], 1, x_test.shape[1])
+            print('2维转3维后的x_train,x_test形状', (x_train.shape, x_test.shape))
+            # print('y_test', y_test.shape)
+            # print('y_test', y_test)
+            # x_train, y_train, x_test, y_test = stock_predict_normal(float_data)  # 数据标准化，减去平均值，除以标准值,2维转3维
+            from tensorflow.keras.models import Sequential
+            model = Sequential()
+            p_save = r"D:\ana\envs\py36\mywagtailone\stock_train\{}".format(r"dense_train\min_max")
+            # p_save = r"D:\ana\envs\py36\mywagtailone\stock_train\{}".format("dense_train")
+            if is_del == 0:
+                import shutil
+                shutil.rmtree(p_save)  # 删除文件夹
+            history = stock_predict_dnn(x_train, y_train, model, p_save, train_num)  # 密集连接模型DNN
+            # history = stock_predict_grn(x_train, y_train)  # 基于GRU的模型 门控循环单元
+            # history = stock_predict_grn_optimization(x_train, y_train)  # 门控循环单元（GRU，gated recurrent unit）优化
+            # history = stock_predict_grn_recurrent(x_train, y_train)  # 循环差堆叠 门控循环单元
+            # history = stock_predict_grn_grn(x_train, y_train)  # 使用双向GRU
+            # history = stock_predict_cnn(x_train, y_train)  # 使用一维卷积神经网络CNN
+            # history = stock_predict_cnn_gru(x_train, y_train)  # 一维卷积基与GRU融合
+            # 评估模型,不输出预测结果
+            # loss = model.evaluate(x_test, y_test)
+            # # loss, accuracy = model.evaluate(x_test, y_test)
+            # print('test loss', loss)
+            # # print('accuracy', accuracy)
+            fl = ""
+            if fl:
+                stock_predict_plt(history)  # 训练loss可视化
+            y_test = sc2.inverse_transform(y_test)  # 原数据
+            y_test = y_test.flatten()  # 二维数组变成一维数组（np.array类型
+            print("y_test[-6:]", y_test[-6:])
+            # print("y_test[:6]", y_test[:6])
+            # 模型预测,输入测试集,输出预测结果
+            # y_pred = model.predict(x_test)
+            y_pred = model.predict(x_test, batch_size=1)
+            y_pred = sc2.inverse_transform(y_pred)  # 对预测数据还原---从（0，1）反归一化到原始范围
+            y_pred = y_pred.flatten()  # 二维数组变成一维数组（np.array类型
+            # print("opopo", p)
+            print("y_pred[-6:]", y_pred[-6:])
+            # print("y_pred[:6]", y_pred[:6])
+            evaluate_error(y_pred, y_test)  # 评估误差
+            if fl:
+                predict_curve(y_pred, y_test, p_save)  # 预测数据可视化对比
 
 
 #  标准化或归一化
@@ -891,7 +893,7 @@ def min_max_scale(float_data):
     sc = preprocessing.MinMaxScaler(feature_range=(0, 1))  # 归一化到(0，1)之间,决策树模型并不适用归一化
     sc2 = preprocessing.MinMaxScaler(feature_range=(0, 1))
     # float_data = float_data[:20]
-    t = int(float_data.shape[0] * 0.9)  # 取前2/3
+    t = int(float_data.shape[0] * 0.9)  # 取前0.9
     """fit_transform方法是fit和transform的结合，fit_transform(X_train) 意思是找出X_train的均值和标准差，并应用在X_train上。
 这时对于X_test，我们就可以直接使用transform方法。因为此时StandardScaler已经保存了X_train的。
 问题二：为什么可以用训练集的 来transform 测试集的数据X_test?
@@ -901,17 +903,16 @@ def min_max_scale(float_data):
     # print(temp.shape)
     # plt_simple(temp)  # 画图
     x_train = sc.fit_transform(float_data[:t, : -1])  # 对特征和标签分别标准，有利于后面预测反标准化
-    y_train = float_data[:t, -1]
+    y_train = float_data[:t, -1]  # 取最后标签
     y_train = y_train.reshape(y_train.shape[0], 1)  # 1维转2维
     # print(y_train.shape)
     y_train = sc2.fit_transform(y_train)
     # x_ = sc.fit_transform(float_data[:t])
     # x_train = x_[:, : -1]
     # y_train = x_[:, -1]
-
     """y_train.shape = (917,)
     y_train[:10]= [-0.54619155 -0.1672131   0.09102414  0.09102414  0.62824271 -0.4209292 -0.52544746 -0.14434142 -0.51986252 -0.32252778]"""
-    print(x_train.shape, y_train.shape)
+    print("x训练和y标签形状", (x_train.shape, y_train.shape))
     # print("y_train33", y_train[:10])
     # plt_simple(y_train)  # 画图
     # print(float_data[t:, :-1].shape)
@@ -920,7 +921,7 @@ def min_max_scale(float_data):
     y_test = float_data[t:, -1]
     y_test = y_test.reshape(y_test.shape[0], 1)  # 1维转2维
     # print("llll", y_test[:5])
-    print(x_test.shape, y_test.shape)
+    print("x测试和y标签形状", (x_test.shape, y_test.shape))
     y_test = sc2.transform(y_test)
     # print(y_test[:10])
     # print(y_test.shape)
@@ -1060,7 +1061,7 @@ def stock_predict_grn(x_train, y_train):
     return history
 
 
-# 股票数据的读取和整理 p为数据库路径, num为数据量大小
+# 股票数据的读取和整理 p为数据库路径, num为数据量大小,只取当天
 def stock_predict_read_data(p, num=""):
     import sqlite3
     from ..tool import tools
@@ -1096,7 +1097,7 @@ def stock_predict_read_data(p, num=""):
             rows = cu.fetchmany(num)
         else:
             rows = cu.fetchall()
-        print(rows[0][:2], rows[0][-4:])
+        # print(rows[0][:2], rows[0][-4:])
         st = []
         """['2020-11-19 00:00:00', '600158', '中体产业',
         275485153.39,
@@ -1174,9 +1175,8 @@ def stock_predict_read_data(p, num=""):
                 else:
                     print("停牌", r[0:2])
             else:  # ff为空时不带日期和代码,13字段,加交易状态为14
-                cu2.execute(
-                    "select open,high,low,close,preclose,volume,amount,turn,tradestatus,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM FROM dragon_tiger_all_inst_lgt2k_181001_211130 where (date=? or date=?) and code=?",
-                    (d, d_add, c))
+                sql = "select open,high,low,close,preclose,volume,amount,turn,tradestatus,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM FROM dragon_tiger_all_inst_lgt2k_181001_211130_0 where (date=? or date=?) and code=?"
+                cu2.execute(sql, (d, d_add, c))
                 ro = cu2.fetchall()
                 # ro = cu2.fetchmany(2)
                 if ro.__len__() != 2:
@@ -1226,30 +1226,176 @@ def stock_predict_read_data(p, num=""):
                         print("停牌", r[0:2])
         cu.close()
         cu2.close()
-        print("第一条数据的后部分", st[0][-5:])
-        # print("测试数据开始")  # 测试数据开始y_test (250, 1)
-        # print(rows[2250][:2], rows[2250][-4:])
-        # print(st[2250][-5:])
-        print("测试数据最后一个")
-        print(rows[-1][:2], rows[-1][-4:])
-        print(st[-1][-5:])
+        print("第一条数据", (rows[0][:2], st[0][-5:]))
+        print("测试数据最后一个", (rows[-1][:2], st[-1][-5:]))
         float_data = np.zeros((len(st), len(st[0])))
-        # print(float_data[:, 1])
         for i, line in enumerate(st):
             try:
                 values = [float(x) for x in line]
                 float_data[i, :] = values
             except:
                 print("无法float", line)
-        print("数据库查询字段个数：", float_data.shape[1]+1)
+        # print("数据库查询字段个数：", float_data.shape[1]+1)
         print("float_data", float_data.shape)
-        print("前5开盘价", float_data[:5, -1])
+        print("float_data前5开盘价", float_data[:5, -1])
+        print("float_data后5开盘价", float_data[-5:, -1])
         """检查数据中是否有inf或者nan的情况。普通numpy数组可用,np.isfinite有限返回true，否则false
                 np.isfinite([np.log(-1.),1.,np.log(0)])= array([False,  True, False]),,
                 np.any()是或操作，任意一个元素为True，输出为True。np.all()是与操作，所有元素为True，输出为True
         """
         print("isfinite", np.all(np.isfinite(float_data)))
         return float_data
+
+
+# 股票数据的读取和整理 p为数据库路径, num为数据量大小,取1天以上，0为当天
+def stock_predict_read_data_n(p):
+    import sqlite3
+    from ..tool import tools
+    with sqlite3.connect(p) as conn:
+        cu = conn.cursor()
+        # accum_amount 区间交易金额，如连续3天，则为3天的总交易金额，如果是当天上榜，则为当天交易金额
+        # 去掉价格，涨幅和换手率后准确率下降厉害由0.05下降到0.6,主要是价格的作用
+        # cu.execute("select "
+        #            "id,"
+        #            "date,"
+        #            "code,"
+        #            "buy,"
+        #            "sell,"
+        #            "net_buy,"
+        #            "accum_amount,"
+        #            "billboard_deal_amt,"
+        #            "deal_amount_ratio,"
+        #            "caption_mark,"
+        #            "deal_net_ratio,"
+        #            "free_market_cap,"
+        #            "buy_num,"
+        #            "sell_num,"
+        #            "lgt_mark,"
+        #            "buy_inst,"
+        #            "sell_inst,"
+        #            "net_inst,"
+        #            "buy_lgt,"
+        #            "sell_lgt,"
+        #            "net_lgt "
+        #            "FROM dragon_tiger_all_inst_lgt2_181001_211130_id WHERE code like '00%' or code like '60%' ORDER BY date ASC limit 200,5;")
+        cu.execute("select "
+                   "id,"
+                   "date,"
+                   "code,"
+                   "buy,"
+                   "sell,"
+                   "net_buy,"
+                   "accum_amount,"
+                   "billboard_deal_amt,"
+                   "deal_amount_ratio,"
+                   "caption_mark,"
+                   "deal_net_ratio,"
+                   "free_market_cap,"
+                   "buy_num,"
+                   "sell_num,"
+                   "lgt_mark,"
+                   "buy_inst,"
+                   "sell_inst,"
+                   "net_inst,"
+                   "buy_lgt,"
+                   "sell_lgt,"
+                   "net_lgt "
+                   "FROM dragon_tiger_all_inst_lgt2_181001_211130_id WHERE code like '00%' or code like '60%' ORDER BY date ASC;")
+        rows = cu.fetchall()
+        # print(rows[0][:2], rows[0][-4:])
+        st = []
+        """['2020-11-19 00:00:00', '600158', '中体产业',
+        275485153.39,
+        182177486.99,
+        93307666.4,
+        2184420403,
+        15.97,
+        9.9862,
+        457662640.38,
+        20.95121615562,
+        '非ST、*ST和S证券连续三个交易日内收盘价格涨幅偏离值累计达到20%的证券',  1,
+        8.9247,
+        4.271506815806,
+        10500201410.24,
+        1, 0,  0,
+        56259952.25,  0,  56259952.25, 0, 0, 0]
+"""
+        for ii in rows:
+            ii = list(ii)
+            # print(ii)
+            trade_date = ii[1]
+            if len(ii[1]) > 10:  # 切出日期
+                trade_date = ii[1][:10]
+            # big="baostock"加(sh. or sz.)code加(sh or sz) or (SZ or SH)
+            c = tools.add_sh(ii[2], big="baostock")
+            pp = (c, ii[0])
+            # print(pp)
+            sql1 = "select son_id,open,high,low,close,preclose,volume,amount,turn,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM FROM dragon_tiger_all_inst_lgt2k_181001_211130_1 where code=? and dragon_id=?"
+            cu.execute(sql1, pp)
+            ro = cu.fetchall()
+            # print("ro", ro)
+            try:
+                if ro[0][0] == 1:  # son_id
+                    price = ro[0][1]  # 开盘价 如果加date和code 为cu.fetchall()[0][2]
+                else:
+                    print("son_id error ro[0]", (trade_date, ro[0]))
+
+                if ro[1][0] == 2:  # 当天
+                    s0 = list(ro[1])  # 日期升 s0>s1
+                    # print(s0)
+                    # s0.pop(5)  # 当天数据，删除前收盘价
+                    # print(s0)
+                    s0.pop(0)
+                else:
+                    print("son_id error ro[1]", (trade_date, ro[1]))
+
+                if ro[2][0] == 3:  # next day
+                    s1 = list(ro[2])
+                    s1.pop(0)
+                else:
+                    s0 = ""
+                    s1 = ""
+                    price = ""
+                    print("son_id error ro[2]", (trade_date, ro[2]))
+                # print(ii[0: 2], (s0, s1))
+                gg = "1"  # 删除id,日期和code
+                if gg:
+                    ii.pop(2)
+                    ii.pop(1)
+                    ii.pop(0)
+                if price != "" and s0 != "" and s1 != "":
+                    ii.append(price)
+                    s1 += s0
+                    s1 += ii
+                    # print(s1)
+                    st.append(s1)
+                else:
+                    print("s0,s1,price is null:", (trade_date, ro[2]))
+            except IndexError:
+                print("没有k线数据", ii[0: 3])
+        cu.close()
+        bb = "d"
+        if bb:
+            # print(st)
+            print("第一条数据", (rows[0][:2], st[0][-5:]))
+            print("测试数据最后一个", (rows[-1][:2], st[-1][-5:]))
+            float_data = np.zeros((len(st), len(st[0])))
+            # print(float_data[:, 1])
+            for i, line in enumerate(st):
+                try:
+                    values = [float(x) for x in line]
+                    float_data[i, :] = values
+                except:
+                    print("无法float", line)
+            print("float_data", float_data.shape)
+            print("float_data前5开盘价", float_data[:5, -1])
+            print("float_data后5开盘价", float_data[-5:, -1])
+            """检查数据中是否有inf或者nan的情况。普通numpy数组可用,np.isfinite有限返回true，否则false
+                    np.isfinite([np.log(-1.),1.,np.log(0)])= array([False,  True, False]),,
+                    np.any()是或操作，任意一个元素为True，输出为True。np.all()是与操作，所有元素为True，输出为True
+            """
+            print("isfinite", np.all(np.isfinite(float_data)))
+            return float_data
 
 
 # 数据标准化，减去平均值，除以标准值 2维转3维
@@ -1356,7 +1502,7 @@ verbose：日志展示，整数
                0 :为不在标准输出流输出日志信息
                1 :显示进度条
 """
-    history = model.fit(x=x_train, y=y_train, epochs=epochs, batch_size=200, validation_split=0.1, callbacks=[cp_callback],
+    history = model.fit(x=x_train, y=y_train, epochs=epochs, batch_size=100, validation_split=0.1, callbacks=[cp_callback],
                         validation_freq=1, verbose=0)
     # model.summary()
     get_para_save(model, p)  # 参数提取写入

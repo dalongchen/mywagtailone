@@ -23,7 +23,12 @@ if __name__ == "__main__":
     # main_test.dragon_tiger_into_tdx()
     # main_test.read_file(r"D:\my2\backup\col_cfgwarn.dat")
     # 读dragon_tiger_all_inst_lgt2龙虎榜日期和日k线,把k数据插入dragon_tiger_all_inst_lgt2k
-    # main_test.dragon_tiger_date_mark(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db")
+    ww = ""
+    if ww == "1":
+        main_test.dragon_tiger_date_mark(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db")
+    # 读dragon_tiger_all_inst_lgt2龙虎榜日期和dragon_tiger_all_inst_lgt2k日k线,把k数据插入dragon_tiger_all_inst_lgt2k_0 or 1,2
+    if ww == "2":
+        main_test.dragon_tiger_date_mark_0(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db")
     # t = main_test.test_tiger_code(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db", "2021-07-01")
     # t = ["sz.001914"]
     # par = main_test.test_get_k(t, "2019-09-20", "")  # 传入code list，获取k线数据
@@ -735,12 +740,12 @@ if __name__ == "__main__":
                     fft_list_m10[num_:-num_] = 0
                     print(fft_list_m10[0:12])
                     # plt.plot(np.fft.ifft(fft_list_m10), label='Fourier transform with {} components'.format(num_))
-                # plt.plot(data_FT['close'], label='Real')
-                # plt.xlabel('Days')
-                # plt.ylabel('USD')
-                # plt.title('Figure 3: Goldman Sachs (close) stock prices & Fourier transforms')
-                # plt.legend()
-                # plt.show()
+                    # plt.plot(data_FT['close'], label='Real')
+                    # plt.xlabel('Days')
+                    # plt.ylabel('USD')
+                    # plt.title('Figure 3: Goldman Sachs (close) stock prices & Fourier transforms')
+                    # plt.legend()
+                    # plt.show()
             l = ""
             if l:
                 from collections import deque
@@ -798,9 +803,9 @@ if __name__ == "__main__":
             plt.legend()
             plt.show()
 
-    # stock_robot_test(r'D:\my2\my_test\history_A_stock_k_data.csv')
-    # stock_robot_lstm(r'D:\my2\my_test\history_A_stock_k_data.csv')
-    # stock_robot_simple_rnn(r'D:\my2\my_test\history_A_stock_k_data.csv')
-    # test()
-    # deep_learn(r'D:\my2\my_test\history_A_stock_k_data.csv')
+            # stock_robot_test(r'D:\my2\my_test\history_A_stock_k_data.csv')
+            # stock_robot_lstm(r'D:\my2\my_test\history_A_stock_k_data.csv')
+            # stock_robot_simple_rnn(r'D:\my2\my_test\history_A_stock_k_data.csv')
+            # test()
+            # deep_learn(r'D:\my2\my_test\history_A_stock_k_data.csv')
 

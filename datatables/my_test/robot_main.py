@@ -11,6 +11,8 @@ if __name__ == "__main__":
     # robot_test.learn_reuters()
     # robot_test.predict_house_price()
     # robot_test.predict_c()
-    robot_test.predict_stock(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db")
+    ww = "1"
+    if ww == "1":
+        robot_test.predict_stock(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db")
     # robot_test.robot_my_test()
     # robot_test.robot_relevance()  # 相关性分析

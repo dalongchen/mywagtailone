@@ -774,24 +774,27 @@ def dragon_tiger_date_mark(path):
         with sqlite3.connect(path) as conn:
             cu = conn.cursor()
             cu2 = conn.cursor()
-            cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2 ORDER BY date ASC")
-            # cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2 ORDER BY date ASC limit 0,5")
-            # cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2_181001_201118 ORDER BY date ASC")
-            # cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2_181001_201118 ORDER BY date ASC limit 0,50")
+            cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC")
+            # cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC limit 300,5")
+            # cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC")
+            # cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC limit 0,50")
             import baostock as bs
             # 登陆系统
             lg = bs.login()
             if lg.error_code == "0":
-                for ii in cu:
+                stock_empty = []
+                rows = cu.fetchall()
+                # print(len(rows))
+                for ii in rows:
                     trade_date = ii[0]
-                    # print(ii)
+                    # print(trade_date)
                     if len(trade_date) > 10:
                         trade_date = trade_date[:10]
                     # 如果当天+1为交易日则返回,否则返回两周内最近一个交易日add_subtract="subtract"后退
-                    # f = "d"返回2021 - 07 - 01,f="t"为2021 - 07 - 01 00：00：00.
-                    d_add = tools.get_late_trade_day(trade_date, add_subtract="add", f="t").strftime('%Y-%m-%d')
+                    # f = "d"返回2021 - 07 - 01,f="t"为2021 - 07 - 01 00：00：00.取当天num=0，最近一天num=1
+                    start = tools.get_late_trade_day_n(trade_date, add_subtract="sub",  num=20, f="t").strftime('%Y-%m-%d')
+                    end = tools.get_late_trade_day_n(trade_date, add_subtract="add", num=5, f="t").strftime('%Y-%m-%d')
                     code = views.add_sh(ii[1], big="baostock")
-                    # print("jj", d_add)
                     """date	交易所行情日期
                     code	证券代码
                     open	开盘价
@@ -815,28 +818,23 @@ def dragon_tiger_date_mark(path):
                                                       "date,code,open,high,low,close,preclose,volume,amount,"
                                                       "adjustflag,turn,"
                                                       "tradestatus,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM,isST",
-                                                      start_date=trade_date, end_date=d_add,
-                                                      frequency="d", adjustflag="3")
-                    # print('query_history_k_data_plus respond error_code:' + rs.error_code)
+                                                      start_date=start, end_date=end,
+                                                      frequency="d", adjustflag="2")
                     rr = rs.error_code
                     if rr != '0':
-                        print("error_code", code)
+                        print(trade_date + "error_code", code)
                     if rs.data.__len__() == 0:
-                        print(trade_date, code + "空")
-                    # if code == 'sz.001872':
-                    #     print(trade_date, code)
-                    # print(rs.data.__len__())
+                        stock_empty.append([trade_date, start, code])
+                        print(trade_date + "-" + start, code + "空")
                     while (rr == '0') & rs.next():
-                        # 获取一条记录，将记录合并在一起
                         d = rs.get_row_data()
-                        if d[11] != "1":
-                            print(d[0], d[1] + "停牌")
-                        cu2.execute("INSERT INTO dragon_tiger_all_inst_lgt2k VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", d)
-                        # cu2.execute("INSERT INTO dragon_tiger_all_inst_lgt2k_181001_201118 VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", d)
-                    # dd = [(trade_date, code), (d_add, code)]
-                    # for d in dd:
-                    #     # print(d)
-                    #     cu2.execute("INSERT INTO dragon_tiger_all_inst_lgt2k_181001_201118 (date,code) VALUES(?,?)", d)
+                        try:
+                            pass
+                            # cu2.execute("INSERT INTO dragon_tiger_all_inst_lgt2k_181001_211130 (date, code,open, high,low, close,preclose, volume,amount, adjustflag,turn, tradestatus,pctChg, peTTM,pbMRQ, psTTM,pcfNcfTTM, isST) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", d)
+                        except sqlite3.IntegrityError:
+                            pass
+                        # print(str(d[0] >= trade_date) + "空")
+            print("空", stock_empty)
             cu.close()
             cu2.close()
             bs.logout()
@@ -1034,3 +1032,95 @@ def dragon_tiger_add_mark(p):
                 elif "无价格涨跌幅限制" in _:
                     cu.execute("update dragon_tiger set caption_mark=? where code=? and caption=?", (7, c, _))
             conn.commit()
+
+
+# 读dragon_tiger_all_inst_lgt2龙虎榜日期和dragon_tiger_all_inst_lgt2k日k线,把k数据插入dragon_tiger_all_inst_lgt2k_0 or 1,2
+def dragon_tiger_date_mark_0(path, number=3):  # sub=1,交易日期减一天， add=1加一天,number=3取几条数据
+    import sqlite3
+    import os
+    from ..tool import tools
+    if os.path.isfile(path):
+        with sqlite3.connect(path) as conn:
+            cu = conn.cursor()
+            cu2 = conn.cursor()
+            cu.execute("select distinct id,date,code FROM dragon_tiger_all_inst_lgt2_181001_211130_id ORDER BY date ASC")
+            # cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC limit 0,10")
+            rows = cu.fetchall()
+            # print(len(rows))
+            for ii in rows:
+                trade_date = ii[1]
+                # print(ii)
+                if len(trade_date) > 10:
+                    trade_date = trade_date[:10]
+                # 如果当天+1为交易日则返回,否则返回两周内最近一个交易日add_subtract="subtract"后退
+                # f = "d"返回2021 - 07 - 01,f="t"为2021 - 07 - 01 00：00：00.取当天num=0，最近一天num=1
+                code = views.add_sh(ii[2], big="baostock")
+                dat = tools.get_late_trade_day_n(trade_date, add_subtract="add", num=1, f="t").strftime('%Y-%m-%d')
+                kk = 0
+                data_list = []
+                for yy in range(0, 30):
+                    aa = (code, dat)
+                    sql = "select * FROM dragon_tiger_all_inst_lgt2k_181001_211130_30 where code=? and date=? ORDER BY date ASC"
+                    cu.execute(sql, aa)
+                    r2 = cu.fetchall()
+                    """date	交易所行情日期
+                                    code	证券代码
+                                    open	开盘价
+                                    high	最高价
+                                    low	最低价
+                                    close	收盘价
+                                    preclose	前收盘价	见表格下方详细说明
+                                    volume	成交量（累计 单位：股）
+                                    amount	成交额（单位：人民币元）
+                                    adjustflag	复权状态(1：后复权， 2：前复权，3：不复权）
+                                    turn	换手率	[指定交易日的成交量(股)/指定交易日的股票的流通股总股数(股)]*100%
+                                    tradestatus	交易状态(1：正常交易 0：停牌）
+                                    pctChg	涨跌幅（百分比）	日涨跌幅=[(指定交易日的收盘价-指定交易日前收盘价)/指定交易日前收盘价]*100%
+                                    peTTM	滚动市盈率	(指定交易日的股票收盘价/指定交易日的每股盈余TTM)=(指定交易日的股票收盘价*截至当日公司总股本)/归属母公司股东净利润TTM
+                                    pbMRQ	市净率	(指定交易日的股票收盘价/指定交易日的每股净资产)=总市值/(最近披露的归属母公司股东的权益-其他权益工具)
+                                    psTTM	滚动市销率	(指定交易日的股票收盘价/指定交易日的每股销售额)=(指定交易日的股票收盘价*截至当日公司总股本)/营业总收入TTM
+                                    pcfNcfTTM	滚动市现率	(指定交易日的股票收盘价/指定交易日的每股现金流TTM)=(指定交易日的股票收盘价*截至当日公司总股本)/现金以及现金等价物净增加额TTM
+                                    isST	是否ST股，1是，0否
+                                        """
+                    if r2.__len__() == 1:
+                        qq = r2[-1]  # 取最后一天数据
+                        # print(trade_date, qq)
+                        pre_close = float(qq[6])
+                        if pre_close and pre_close != 0:
+                            r_up = abs((float(qq[5]) - pre_close) / pre_close)  # print(d[5], d[6])  # close, pre_close
+                            if r_up < 0.11:
+                                for d in r2:
+                                    if d[11] == "0":
+                                        print("停牌", (trade_date, d[0], d[1]))
+                                    elif d[11] == "1":
+                                        kk += 1
+                                        # d = list(d)
+                                        st_id = [ii[0], kk]
+                                        st_id += list(d)
+                                        # print(st_id)
+                                        data_list.append(st_id)
+                                    else:
+                                        print("error,不为0，1", (trade_date, d[0], d[1]))
+                            else:
+                                print("涨幅r_up > 0.11:", r2)
+                        else:
+                            print("pre_close没有 or pre_close = 0:", r2)
+                    else:
+                        # pass
+                        if yy > 28:
+                            print("查询数量error" + trade_date, (dat, code, r2.__len__()))
+                    dat = tools.get_late_trade_day_n(dat, add_subtract="sub", num=1, f="t").strftime(
+                        '%Y-%m-%d')
+                    # print("dat", dat)
+                    if kk == number:
+                        break
+                if len(data_list) == 3:
+                    for rr in data_list:
+                        oo = ""
+                        if oo:
+                            sql2 = "INSERT INTO dragon_tiger_all_inst_lgt2k_181001_211130_1 (dragon_id,son_id,date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM, isST) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+                            cu2.execute(sql2, rr)
+                else:
+                    print("数量不足", (trade_date,  len(data_list), data_list))
+            cu.close()
+            cu2.close()
