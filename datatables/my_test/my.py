@@ -22,7 +22,7 @@ if __name__ == "__main__":
     # main_test.east_dragon_tiger_new(net, 1000, "2021-07-01", "2021-07-31", f="institution")
     # main_test.dragon_tiger_into_tdx()
     # main_test.read_file(r"D:\my2\backup\col_cfgwarn.dat")
-    # 读dragon_tiger_all_inst_lgt2龙虎榜日期和日k线,把k数据插入dragon_tiger_all_inst_lgt2k
+    # 读dragon_tiger_all_inst_lgt2龙虎榜日期和baostock日k线,把k数据插入dragon_tiger_all_inst_lgt2k
     ww = ""
     if ww == "1":
         main_test.dragon_tiger_date_mark(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db")

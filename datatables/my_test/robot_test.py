@@ -821,12 +821,12 @@ def evaluate_naive_method(val_steps, val_gen, std):
     print('mae=', np.mean(batch_maes)*std)
 
 
-# 股票预测 p为数据库路径, is_del=0删除
-def predict_stock(p, train_num=200, is_del=1):
+# 股票预测 p为数据库路径, dnn0删除
+def predict_stock(p, train_num=512, method="dnn"):
     if os.path.isfile(p):
         # float_data = stock_predict_read_data(p)  # 股票数据的读取和整理0天, 当天
         float_data = stock_predict_read_data_n(p)  # 股票数据的读取和整理1天
-        uu = "f"
+        uu = "m"
         if uu:
             x_train, y_train, x_test, y_test, sc2 = min_max_scale(float_data)  # 标准化或归一化
             # print('x_train', x_train.shape)
@@ -840,39 +840,61 @@ def predict_stock(p, train_num=200, is_del=1):
             # print('y_test', y_test)
             # x_train, y_train, x_test, y_test = stock_predict_normal(float_data)  # 数据标准化，减去平均值，除以标准值,2维转3维
             from tensorflow.keras.models import Sequential
+            import shutil
             model = Sequential()
-            p_save = r"D:\ana\envs\py36\mywagtailone\stock_train\{}".format(r"dense_train\min_max")
-            # p_save = r"D:\ana\envs\py36\mywagtailone\stock_train\{}".format("dense_train")
-            if is_del == 0:
-                import shutil
-                shutil.rmtree(p_save)  # 删除文件夹
-            history = stock_predict_dnn(x_train, y_train, model, p_save, train_num)  # 密集连接模型DNN
-            # history = stock_predict_grn(x_train, y_train)  # 基于GRU的模型 门控循环单元
-            # history = stock_predict_grn_optimization(x_train, y_train)  # 门控循环单元（GRU，gated recurrent unit）优化
-            # history = stock_predict_grn_recurrent(x_train, y_train)  # 循环差堆叠 门控循环单元
-            # history = stock_predict_grn_grn(x_train, y_train)  # 使用双向GRU
-            # history = stock_predict_cnn(x_train, y_train)  # 使用一维卷积神经网络CNN
-            # history = stock_predict_cnn_gru(x_train, y_train)  # 一维卷积基与GRU融合
+            p_save = r"D:\ana\envs\py36\mywagtailone\stock_train\{}"
+            if method == "dnn" or method == "dnn0":
+                p_save = p_save.format(r"dense_train\min_max")
+                if method == "dnn0":
+                    shutil.rmtree(p_save)  # 删除文件夹
+                history = stock_predict_dnn(x_train, y_train, model, p_save, train_num)  # 密集连接模型DNN
+            elif method == "grn" or method == "grn0":
+                p_save = p_save.format(r"grn")
+                if method == "grn0":
+                    shutil.rmtree(p_save)  # 删除文件夹
+                history = stock_predict_grn(x_train, y_train, model, p_save, train_num)  # 基于GRU的模型 门控循环单元
+            elif method == "gru_opt" or method == "gru_opt0":
+                p_save = p_save.format(r"gru_opt")
+                if method == "gru_opt0":
+                    shutil.rmtree(p_save)  # 删除文件夹
+                history = stock_predict_grn_optimization(x_train, y_train, model, p_save, train_num)  # 门控循环单元（GRU，gated recurrent unit）优化
+            elif method == "gru_rec" or method == "gru_rec0":
+                p_save = p_save.format(r"gru_rec")
+                if method == "gru_rec0":
+                    shutil.rmtree(p_save)  # 删除文件夹
+                history = stock_predict_grn_recurrent(x_train, y_train, model, p_save, train_num)  # 循环差堆叠 门控循环单元
+            elif method == "gru_gru" or method == "gru_gru0":
+                p_save = p_save.format(r"gru_gru")
+                if method == "gru_gru0":
+                    shutil.rmtree(p_save)  # 删除文件夹
+                history = stock_predict_grn_grn(x_train, y_train, model, p_save, train_num)  # 使用双向GRU
+            elif method == "cnn" or method == "cnn0":
+                p_save = p_save.format(r"cnn")
+                if method == "cnn0":
+                    shutil.rmtree(p_save)  # 删除文件夹
+                history = stock_predict_cnn(x_train, y_train, model, p_save, train_num)  # 使用一维卷积神经网络CNN
+            elif method == "cnn_gru" or method == "cnn_gru0":
+                p_save = p_save.format(r"cnn_gru")
+                if method == "cnn_gru0":
+                    shutil.rmtree(p_save)  # 删除文件夹
+                history = stock_predict_cnn_gru(x_train, y_train, model, p_save, train_num)  # 一维卷积基与GRU融合
             # 评估模型,不输出预测结果
-            # loss = model.evaluate(x_test, y_test)
-            # # loss, accuracy = model.evaluate(x_test, y_test)
-            # print('test loss', loss)
-            # # print('accuracy', accuracy)
+            loss = model.evaluate(x_test, y_test)
+            # accuracy = model.evaluate(x_test, y_test)
+            print('test loss', loss)
+            # print("accuracy", accuracy)
             fl = ""
             if fl:
                 stock_predict_plt(history)  # 训练loss可视化
             y_test = sc2.inverse_transform(y_test)  # 原数据
             y_test = y_test.flatten()  # 二维数组变成一维数组（np.array类型
-            print("y_test[-6:]", y_test[-6:])
-            # print("y_test[:6]", y_test[:6])
+            print("y_test[-6:]", y_test[-10:])
             # 模型预测,输入测试集,输出预测结果
             # y_pred = model.predict(x_test)
             y_pred = model.predict(x_test, batch_size=1)
             y_pred = sc2.inverse_transform(y_pred)  # 对预测数据还原---从（0，1）反归一化到原始范围
             y_pred = y_pred.flatten()  # 二维数组变成一维数组（np.array类型
-            # print("opopo", p)
-            print("y_pred[-6:]", y_pred[-6:])
-            # print("y_pred[:6]", y_pred[:6])
+            print("y_pred[-6:]", y_pred[-10:])
             evaluate_error(y_pred, y_test)  # 评估误差
             if fl:
                 predict_curve(y_pred, y_test, p_save)  # 预测数据可视化对比
@@ -946,10 +968,7 @@ def plt_simple(temp):
 
 
 # 一维卷积基与GRU融合
-def stock_predict_cnn_gru(x_train, y_train):
-    from tensorflow.keras.models import Sequential
-    from tensorflow.keras.optimizers import RMSprop
-    model = Sequential()
+def stock_predict_cnn_gru(x_train, y_train, model, p, train_num):
     """filters：整数,输出空间的维数(即卷积中的滤波器数)=32.kernel_size：单个整数的整数或元组/列表,指定1D卷积窗口的长度=5"""
     model.add(layers.Conv1D(32, 5, activation='relu', input_shape=(None, x_train.shape[-1]), padding='same'))
     """pool_size:一个整数或者一个单个整数的tuple/list,表示池化窗口的大小
@@ -966,7 +985,7 @@ def stock_predict_cnn_gru(x_train, y_train):
     print(t.shape) = (2420, 1140, 32)"""
     model.add(layers.MaxPooling1D(pool_size=3, padding='same'))
     model.add(layers.Conv1D(32, 5, activation='relu', padding='same'))
-    model.add(layers.GRU(32, dropout=0.1, recurrent_dropout=0.1))
+    model.add(layers.GRU(32, dropout=0.05, recurrent_dropout=0.05))
     model.add(layers.Dense(1))
     # model.compile(optimizer=RMSprop(), loss='mae', metrics=['accuracy'])
     """Adam：Adaptive Moment Estimation这个算法是另一种计算每个参数的自适应学习率的方法。相当于 RMSprop + Momentum
@@ -974,15 +993,17 @@ def stock_predict_cnn_gru(x_train, y_train):
 的指数衰减平均值"""
     # model.compile(optimizer=RMSprop(), loss='mae')
     model.compile(loss='mae', optimizer='adam', metrics=['accuracy'])
-    history = model.fit(x=x_train, y=y_train, epochs=100, batch_size=200, validation_split=0.1)
+    cp_callback = train_optimize_save(model, p)  # 训练数据优化保存
+    history = model.fit(x=x_train, y=y_train, epochs=train_num, batch_size=128, validation_split=0.1,
+                        verbose=0, callbacks=[cp_callback], validation_freq=1)
     return history
 
 
 # 使用一维卷积神经网络CNN
-def stock_predict_cnn(x_train, y_train):
-    from tensorflow.keras.models import Sequential
+def stock_predict_cnn(x_train, y_train, model, p, train_num):
+    # from tensorflow.keras.models import Sequential
     from tensorflow.keras.optimizers import RMSprop
-    model = Sequential()
+    # model = Sequential()
     """如果padding参数为valid，这意味着将出现卷积过程中发生的自动降维，则可能会得到负尺寸。
 解决方法：将padding的参数替换成same。"""
     model.add(layers.Conv1D(32, 5, activation='relu', input_shape=(None, x_train.shape[-1]), padding='same'))
@@ -995,70 +1016,179 @@ def stock_predict_cnn(x_train, y_train):
     model.add(layers.GlobalMaxPool1D())
     model.add(layers.Dense(1))
     model.compile(optimizer=RMSprop(), loss='mae')
-    history = model.fit(x=x_train, y=y_train, epochs=100, batch_size=200, validation_split=0.1)
+    cp_callback = train_optimize_save(model, p)  # 训练数据优化保存
+    history = model.fit(x=x_train, y=y_train, epochs=train_num, batch_size=128, validation_split=0.1,
+                        verbose=0, callbacks=[cp_callback], validation_freq=1)
     return history
 
 
 # 使用双向GRU
-def stock_predict_grn_grn(x_train, y_train):
-    from tensorflow.keras.models import Sequential
+def stock_predict_grn_grn(x_train, y_train, model, p, train_num):
+    # from tensorflow.keras.models import Sequential
     from tensorflow.keras.optimizers import RMSprop
-    model = Sequential()
+    # model = Sequential()
     model.add(layers.Bidirectional(layers.GRU(32), input_shape=(None, x_train.shape[-1])))
     model.add(layers.Dense(1))
     model.compile(optimizer=RMSprop(), loss='mae')
-    history = model.fit(x=x_train, y=y_train, epochs=100, batch_size=200, validation_split=0.1)
+    cp_callback = train_optimize_save(model, p)  # 训练数据优化保存
+    history = model.fit(x=x_train, y=y_train, epochs=train_num, batch_size=128, validation_split=0.1,
+                        verbose=0, callbacks=[cp_callback], validation_freq=1)
     return history
 
 
 # 循环差堆叠 门控循环单元
-def stock_predict_grn_recurrent(x_train, y_train):
-    from tensorflow.keras.models import Sequential
+def stock_predict_grn_recurrent(x_train, y_train, model, p, train_num):
     from tensorflow.keras.optimizers import RMSprop
-    model = Sequential()
-    model.add(layers.GRU(32, dropout=0.1, recurrent_dropout=0.1, return_sequences=True,
+    model.add(layers.GRU(32, dropout=0.025, recurrent_dropout=0.025, return_sequences=True,
                          input_shape=(x_train.shape[1], x_train.shape[-1])))
-    model.add(layers.GRU(64, activation='relu', dropout=0.1, recurrent_dropout=0.1))
+    model.add(layers.GRU(32, activation='relu', dropout=0.025, recurrent_dropout=0.025))
     model.add(layers.Dense(1))
     model.compile(optimizer=RMSprop(), loss='mae')
-    history = model.fit(x=x_train, y=y_train, epochs=100, batch_size=200, validation_split=0.1)
+    cp_callback = train_optimize_save(model, p)  # 训练数据优化保存
+    history = model.fit(x=x_train, y=y_train, epochs=train_num, batch_size=128, validation_split=0.1,
+                        verbose=0, callbacks=[cp_callback], validation_freq=1)
     return history
 
 
 # 门控循环单元（GRU，gated recurrent unit）优化
-def stock_predict_grn_optimization(x_train, y_train):
+def stock_predict_grn_optimization(x_train, y_train, model, p, train_num):
     """门控循环单元（GRU，gated recurrent unit）层的工作原理与LSTM相同。但它做了一些简化，因此运 行的计算代价更低
         （虽然表示能力可能不如LSTM）。机器学习中到处可以见到这种计算代价与表示能力之间的折中。"""
-    from tensorflow.keras.models import Sequential
     from tensorflow.keras.optimizers import RMSprop
-    model = Sequential()
-    model.add(layers.GRU(32, dropout=0.1, recurrent_dropout=0.1, input_shape=(x_train.shape[1], x_train.shape[-1])))
-    # model.add(layers.GRU(32, dropout=0.1, recurrent_dropout=0.1, input_shape=(None, x_train.shape[-1])))
+    """Keras的每个循环层都有两个与 dropout 相关的参数：一个是 dropout，指定该层输入单元的 dropout 比率；
+    另一个是 recurrent_dropout，指定循环单元的 dropout 比率。"""
+    model.add(layers.GRU(32, dropout=0.05, recurrent_dropout=0.05, input_shape=(x_train.shape[1], x_train.shape[-1])))
     model.add(layers.Dense(1))
     model.compile(optimizer=RMSprop(), loss='mae')
-    history = model.fit(x=x_train, y=y_train, epochs=150, batch_size=200, validation_split=0.1)
+    cp_callback = train_optimize_save(model, p)  # 训练数据优化保存
+    history = model.fit(x=x_train, y=y_train, epochs=train_num, batch_size=64, validation_split=0.1,
+                        verbose=0, callbacks=[cp_callback], validation_freq=1
+                        )
     return history
 
 
 # 基于GRU的模型 门控循环单元
-def stock_predict_grn(x_train, y_train):
+def stock_predict_grn(x_train, y_train, model, p, train_num):
     """基于GRU的模型,GRU是LSTM的简化，运算代价更低。（Gated Recurrent Unit, LSTM变体）units=32: 正整数，
         输出空间的维度.反复性神经网络，因为这样的网络能够利用数据间存在的时间联系来分析数据潜在规律进而
         提升预测的准确性，这次我们使用的反复性网络叫GRU"""
-    from tensorflow.keras.models import Sequential
-    from tensorflow.keras.optimizers import RMSprop
-    model = Sequential()
+    # from tensorflow.keras.optimizers import RMSprop
     model.add(layers.GRU(32, input_shape=(x_train.shape[1], x_train.shape[-1])))
     # # model.add(layers.GRU(32, input_shape=(None, x_train.shape[-1])))
     model.add(layers.Dense(1))
     # 输出网络结果情况
     # model.summary()
     # 编译模型：优化器为optimizer='adam',metrics=['accuracy'] 评价方法为准确度，
-    model.compile(optimizer=RMSprop(), loss='mae')
+    # model.compile(optimizer=RMSprop(), loss='mae')
+    # model.compile(loss='mae', optimizer='rmsprop')
+    model.compile(loss='mae', optimizer='adam')
+    cp_callback = train_optimize_save(model, p)  # 训练数据优化保存
     # 训练模型，通过fit方法传入数据进行训练，训练10代，每代批次大小为200,每批次取训练集0.1的数据做验证集
-    # history = model.fit(x=x_train, y=y_train, epochs=2, batch_size=100)
-    history = model.fit(x=x_train, y=y_train, epochs=200, batch_size=200, validation_split=0.1)
+    history = model.fit(x=x_train, y=y_train, epochs=train_num, batch_size=64, validation_split=0.1,
+                        verbose=0, callbacks=[cp_callback], validation_freq=1)
     return history
+
+
+# 密集连接模型DNN
+def stock_predict_dnn(x_train, y_train, model, p, epochs):
+    """input_shape检索图层的输入形状. 仅适用于图层只有一个输入,即它是否连接到一个输入层,或者所有输入具有相同形状的情况
+    ReLU函数(Rectified Linear Units)其实就是一个取最大值函数，注意这并不是全区间可导的
+    激活函数是用来加入非线性因素的，解决线性模型所不能解决的问题
+    tf.keras.layers.Dense(
+    units, activation=None, use_bias=True, kernel_initializer='glorot_uniform',
+    bias_initializer='zeros', kernel_regularizer=None, bias_regularizer=None,
+    activity_regularizer=None, kernel_constraint=None, bias_constraint=None,
+    **kwargs
+    )
+    units：整数或长整数,输出空间的维数，可以理解为filters数量.
+    activation：激活功能(可调用),将其设置为“None”以保持线性激活.
+    use_bias：Boolean,表示该层是否使用偏置参数.使用bias为True（默认使用）
+    kernel_initializer：卷积核的初始化器.权重矩阵的初始化函数；如果为None(默认),则使用tf.get_variable使用的默认初始化程序初始化权重.默认是均匀分布随机
+    bias_initializer：偏置的初始化函数.
+    kernel_regularizer：权重矩阵的正则化函数.
+    bias_regularizer：正规函数的偏差.
+    activity_regularizer：输出的正则化函数.
+    kernel_constraint：由Optimizer更新后应用于内核的可选投影函数(例如,用于实现层权重的范数约束或值约束).该函数必须将未投影的变量作为输入,并且必须返回投影变量(必须具有相同的形状).在进行异步分布式训练时,使用约束是不安全的.
+    bias_constraint：由Optimizer更新后应用于偏置的可选投影函数"""
+    model.add(layers.Flatten(input_shape=[x_train.shape[1], x_train.shape[-1]]))
+    model.add(layers.Dense(32, activation='relu'))  # 32个输出单元的密集层，其输出数组的尺寸为 (*, 32).units 一个正整数，表示输出的维度
+    # model.add(layers.BatchNormalization())
+    model.add(layers.Dense(1))
+    """Mean Absolute Error Loss平均绝对误差（MAE）是另一种常用的回归损失函数，它是目标值与预测值之差绝对值和的均值，
+    表示了预测值的平均误差幅度，而不需要考虑误差的方向（注：平均偏差误差MBE则是考虑的方向的误差，是残差的和）
+    metrics采用mae，代表绝对误差，即预测值和目标值的差值的绝对值。
+    adam (Adaptive Moment Estimation)吸收了Adagrad（自适应学习率的梯度下降算法）和动量梯度下降算法的优点，
+    既能适应稀疏梯度（即自然语言和计算机视觉问题），又能缓解梯度震荡的问题
+
+    在监督学习中我们使用梯度下降法时，学习率是一个很重要的指标，因为学习率决定了学习进程的快慢（也可以看作步幅的大小）。
+    如果学习率过大，很可能会越过最优值，反而如果学习率过小，优化的效率可能很低，导致过长的运算时间，
+    所以学习率对于算法性能的表现十分重要。而优化器keras.optimizers.Adam()是解决这个问题的一个方案。
+    其大概的思想是开始的学习率设置为一个较大的值，然后根据次数的增多，动态的减小学习率，以实现效率和效果的兼得
+keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.0)
+lr：float> = 0.学习率
+beta_1：float，0 <beta <1。一般接近1。一阶矩估计的指数衰减率
+beta_2：float，0 <beta <1。一般接近1。二阶矩估计的指数衰减率
+epsilon：float> = 0,模糊因子。如果None，默认为K.epsilon()。该参数是非常小的数，其为了防止在实现中除以零
+decay：float> = 0,每次更新时学习率下降"""
+    # model.compile(loss='mae', optimizer='rmsprop')
+    model.compile(loss='mae', optimizer='adam')
+    cp_callback = train_optimize_save(model, p)  # 训练数据优化保存
+    # batch_size：整数，指定进行梯度下降时每个batch包含的样本数。训练时一个batch的样本会被计算一次梯度下降，
+    # 使目标函数优化一步。epochs：整数，训练的轮数，每个epoch会把训练集轮一遍。
+    # callbacks：list，其中的元素是keras.callbacks.Callback的对象。
+    # 这个list中的回调函数将会在训练过程中的适当时机被调用，参考回调函数
+    # validation_data：形式为（X，y）的tuple，是指定的验证集，此参数将覆盖validation_spilt
+    """fit(): Method calculates the parameters μ and σ and saves them as internal objects.
+解释：简单来说，就是求得训练集X的均值，方差，最大值，最小值,这些训练集X固有的属性。
+
+transform(): Method using these calculated parameters apply the transformation to a particular dataset.
+解释：在fit的基础上，进行标准化，降维，归一化等操作（看具体用的是哪个工具，如PCA，StandardScaler等）。
+
+fit_transform(): joins the fit() and transform() method for transformation of dataset.
+解释：fit_transform是fit和transform的组合，既包括了训练又包含了转换。
+transform()和fit_transform()二者的功能都是对数据进行某种统一处理（比如标准化~N(0,1)，将数据缩放(映射)到某个固定区间，
+归一化，正则化等）fit_transform(trainData)对部分数据先拟合fit，找到该part的整体指标，如均值、方差、最大值最小值等等
+（根据具体转换的目的），然后对该trainData进行转换transform，从而实现数据的标准化、归一化等等。
+
+fit(x,y)传两个参数的是有监督学习的算法，fit(x)传一个参数的是无监督学习的算法，比如降维、特征提取、标准化
+
+必须先用fit_transform(trainData)，之后再transform(testData)如果直接transform(testData)，程序会报错
+如果fit_transfrom(trainData)后，使用fit_transform(testData)而不transform(testData)，虽然也能归一化，
+但是两个结果不是在同一个“标准”下的，具有明显差异。(一定要避免这种情况)
+
+validation_freq=1, 指使用验证集实施验证的频率。当等于1时代表每个epoch结束都验证一次
+verbose：日志展示，整数
+               0 :为不在标准输出流输出日志信息
+               1 :显示进度条
+"""
+    history = model.fit(x=x_train, y=y_train, epochs=epochs, batch_size=128, validation_split=0.1, callbacks=[cp_callback],
+                        validation_freq=1, verbose=0)
+    # model.summary()
+    get_para_save(model, p)  # 参数提取写入
+    return history
+
+
+# 训练数据优化保存
+def train_optimize_save(model, p):
+    checkpoint_save_path = r"{}\rnn_stock.ckpt".format(p)
+    print('---', p)
+    if os.path.exists(checkpoint_save_path + '.index'):
+        print('load train optimize file--')
+        model.load_weights(checkpoint_save_path)
+        """使用参数save_weights_only时：设置True，则调用model.save_weights()；设置False，则调用model.save()；
+            monitor如果val_loss 提高了就会保存，没有提高就不会保存
+            save_best_only：当设置为True时，将只保存在验证集上性能最好的模型
+            mode：‘auto’，‘min’，‘max’之一，在save_best_only = True时决定性能最佳模型的评判准则，
+            例如，当监测值为val_acc时，模式应为max，当检测值为val_loss时，模式应为min。在auto模式下，
+            评价准则由被监测值的名字自动推断。"""
+    cp_callback = keras.callbacks.ModelCheckpoint(
+        filepath=checkpoint_save_path,
+        save_weights_only=True,
+        save_best_only=True,
+        mode='auto',
+        verbose=0,  # 信息展示模式，0或1。为1表示输出epoch模型保存信息，默认为0表示不输出该信息，
+        monitor='val_loss')
+    return cp_callback
 
 
 # 股票数据的读取和整理 p为数据库路径, num为数据量大小,只取当天
@@ -1277,7 +1407,7 @@ def stock_predict_read_data_n(p):
         #            "buy_lgt,"
         #            "sell_lgt,"
         #            "net_lgt "
-        #            "FROM dragon_tiger_all_inst_lgt2_181001_211130_id WHERE code like '00%' or code like '60%' ORDER BY date ASC limit 200,5;")
+        #            "FROM dragon_tiger_all_inst_lgt2_181001_211130 WHERE code like '00%' or code like '60%' ORDER BY date ASC limit 290,30;")
         cu.execute("select "
                    "id,"
                    "date,"
@@ -1300,7 +1430,7 @@ def stock_predict_read_data_n(p):
                    "buy_lgt,"
                    "sell_lgt,"
                    "net_lgt "
-                   "FROM dragon_tiger_all_inst_lgt2_181001_211130_id WHERE code like '00%' or code like '60%' ORDER BY date ASC;")
+                   "FROM dragon_tiger_all_inst_lgt2_181001_211130 WHERE code like '00%' or code like '60%' ORDER BY date ASC;")
         rows = cu.fetchall()
         # print(rows[0][:2], rows[0][-4:])
         st = []
@@ -1330,51 +1460,62 @@ def stock_predict_read_data_n(p):
             c = tools.add_sh(ii[2], big="baostock")
             pp = (c, ii[0])
             # print(pp)
-            sql1 = "select son_id,open,high,low,close,preclose,volume,amount,turn,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM FROM dragon_tiger_all_inst_lgt2k_181001_211130_1 where code=? and dragon_id=?"
+            sql1 = "select son_id,open,high,low,close,preclose,volume,amount,turn,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM FROM dragon_tiger_all_inst_lgt2k_181001_211130_4 where code=? and dragon_id=?"
             cu.execute(sql1, pp)
             ro = cu.fetchall()
-            # print("ro", ro)
+            # print("ro", ro[0:2])
             try:
                 if ro[0][0] == 1:  # son_id
                     price = ro[0][1]  # 开盘价 如果加date和code 为cu.fetchall()[0][2]
+                    # print(price)
                 else:
                     print("son_id error ro[0]", (trade_date, ro[0]))
+                ff = []
+                """切片的格式 [0:3:1]，其中下标0 指的是序列的第一个元素(左边界)，下标3可以指是切片的数量(右边界)，
+                参数1表示切片的步长为1，如果是-1则表示从右边开始进行切片且步长为1"""
+                ro = ro[::-1]
+                for ggg in ro[:-1]:
+                    # print(ggg)
+                    ggg = list(ggg)
+                    ggg.pop(0)
+                    # print(ggg)
+                    ff += ggg
+                # print(ff)
+                # if ro[1][0] == 2:  # 当天
+                #     s0 = list(ro[1])  # 日期升 s0>s1
+                #     # print(s0)
+                #     # s0.pop(5)  # 当天数据，删除前收盘价
+                #     # print(s0)
+                #     s0.pop(0)
+                # else:
+                #     print("son_id error ro[1]", (trade_date, ro[1]))
 
-                if ro[1][0] == 2:  # 当天
-                    s0 = list(ro[1])  # 日期升 s0>s1
-                    # print(s0)
-                    # s0.pop(5)  # 当天数据，删除前收盘价
-                    # print(s0)
-                    s0.pop(0)
-                else:
-                    print("son_id error ro[1]", (trade_date, ro[1]))
-
-                if ro[2][0] == 3:  # next day
-                    s1 = list(ro[2])
-                    s1.pop(0)
-                else:
-                    s0 = ""
-                    s1 = ""
-                    price = ""
-                    print("son_id error ro[2]", (trade_date, ro[2]))
+                # if ro[2][0] == 3:  # next day
+                #     s1 = list(ro[2])
+                #     s1.pop(0)
+                # else:
+                #     s0 = ""
+                #     s1 = ""
+                #     price = ""
+                #     print("son_id error ro[2]", (trade_date, ro[2]))
                 # print(ii[0: 2], (s0, s1))
                 gg = "1"  # 删除id,日期和code
                 if gg:
                     ii.pop(2)
                     ii.pop(1)
                     ii.pop(0)
-                if price != "" and s0 != "" and s1 != "":
+                if price != "" and ff:
                     ii.append(price)
-                    s1 += s0
-                    s1 += ii
-                    # print(s1)
-                    st.append(s1)
+                    ff += ii
+                    # print(ff)
+                    st.append(ff)
                 else:
-                    print("s0,s1,price is null:", (trade_date, ro[2]))
+                    print("ff,price is null:", (trade_date, ro[2]))
             except IndexError:
-                print("没有k线数据", ii[0: 3])
+                pass
+                # print("没有k线数据", ii[1: 3])
         cu.close()
-        bb = "d"
+        bb = "h"
         if bb:
             # print(st)
             print("第一条数据", (rows[0][:2], st[0][-5:]))
@@ -1434,79 +1575,6 @@ def stock_predict_plt(history):
     plt.title('Training and Validation loss')
     plt.legend()
     plt.show()
-
-
-# 密集连接模型DNN
-def stock_predict_dnn(x_train, y_train, model, p, epochs):
-    """input_shape检索图层的输入形状. 仅适用于图层只有一个输入,即它是否连接到一个输入层,或者所有输入具有相同形状的情况
-    ReLU函数(Rectified Linear Units)其实就是一个取最大值函数，注意这并不是全区间可导的
-    激活函数是用来加入非线性因素的，解决线性模型所不能解决的问题"""
-    model.add(layers.Flatten(input_shape=[x_train.shape[1], x_train.shape[-1]]))
-    model.add(layers.Dense(32, activation='relu'))
-    model.add(layers.Dense(1))
-    """Mean Absolute Error Loss平均绝对误差（MAE）是另一种常用的回归损失函数，它是目标值与预测值之差绝对值和的均值，
-    表示了预测值的平均误差幅度，而不需要考虑误差的方向（注：平均偏差误差MBE则是考虑的方向的误差，是残差的和）
-    metrics采用mae，代表绝对误差，即预测值和目标值的差值的绝对值。
-    adam (Adaptive Moment Estimation)吸收了Adagrad（自适应学习率的梯度下降算法）和动量梯度下降算法的优点，
-    既能适应稀疏梯度（即自然语言和计算机视觉问题），又能缓解梯度震荡的问题
-
-    在监督学习中我们使用梯度下降法时，学习率是一个很重要的指标，因为学习率决定了学习进程的快慢（也可以看作步幅的大小）。
-    如果学习率过大，很可能会越过最优值，反而如果学习率过小，优化的效率可能很低，导致过长的运算时间，
-    所以学习率对于算法性能的表现十分重要。而优化器keras.optimizers.Adam()是解决这个问题的一个方案。
-    其大概的思想是开始的学习率设置为一个较大的值，然后根据次数的增多，动态的减小学习率，以实现效率和效果的兼得
-keras.optimizers.Adam(lr=0.001, beta_1=0.9, beta_2=0.99, epsilon=1e-08, decay=0.0)
-lr：float> = 0.学习率
-beta_1：float，0 <beta <1。一般接近1。一阶矩估计的指数衰减率
-beta_2：float，0 <beta <1。一般接近1。二阶矩估计的指数衰减率
-epsilon：float> = 0,模糊因子。如果None，默认为K.epsilon()。该参数是非常小的数，其为了防止在实现中除以零
-decay：float> = 0,每次更新时学习率下降"""
-    # model.compile(optimizer=keras.optimizers.RMSprop(), loss='mae')
-    # model.compile(loss='mae', optimizer=keras.optimizers.Adam(0.001))
-    model.compile(loss='mae', optimizer='adam')
-    # model.compile(loss='mae', optimizer='adam', metrics=['mae'])
-    # model.compile(loss='mae', optimizer='adam ', metrics=['accuracy'])
-    checkpoint_save_path = r"{}\rnn_stock.ckpt".format(p)
-    print('---', checkpoint_save_path)
-    if os.path.exists(checkpoint_save_path + '.index'):
-        print('-------------load the model-----------------')
-        model.load_weights(checkpoint_save_path)
-    # 使用参数save_weights_only时：设置True，则调用model.save_weights()；设置False，则调用model.save()；
-    # monitor如果val_loss 提高了就会保存，没有提高就不会保存
-    # save_best_only：当设置为True时，将只保存在验证集上性能最好的模型
-    cp_callback = keras.callbacks.ModelCheckpoint(filepath=checkpoint_save_path, save_weights_only=True, save_best_only=True, monitor='val_loss')
-    # batch_size：整数，指定进行梯度下降时每个batch包含的样本数。训练时一个batch的样本会被计算一次梯度下降，
-    # 使目标函数优化一步。epochs：整数，训练的轮数，每个epoch会把训练集轮一遍。
-    # callbacks：list，其中的元素是keras.callbacks.Callback的对象。
-    # 这个list中的回调函数将会在训练过程中的适当时机被调用，参考回调函数
-    # validation_data：形式为（X，y）的tuple，是指定的验证集，此参数将覆盖validation_spilt
-    """fit(): Method calculates the parameters μ and σ and saves them as internal objects.
-解释：简单来说，就是求得训练集X的均值，方差，最大值，最小值,这些训练集X固有的属性。
-
-transform(): Method using these calculated parameters apply the transformation to a particular dataset.
-解释：在fit的基础上，进行标准化，降维，归一化等操作（看具体用的是哪个工具，如PCA，StandardScaler等）。
-
-fit_transform(): joins the fit() and transform() method for transformation of dataset.
-解释：fit_transform是fit和transform的组合，既包括了训练又包含了转换。
-transform()和fit_transform()二者的功能都是对数据进行某种统一处理（比如标准化~N(0,1)，将数据缩放(映射)到某个固定区间，
-归一化，正则化等）fit_transform(trainData)对部分数据先拟合fit，找到该part的整体指标，如均值、方差、最大值最小值等等
-（根据具体转换的目的），然后对该trainData进行转换transform，从而实现数据的标准化、归一化等等。
-
-fit(x,y)传两个参数的是有监督学习的算法，fit(x)传一个参数的是无监督学习的算法，比如降维、特征提取、标准化
-
-必须先用fit_transform(trainData)，之后再transform(testData)如果直接transform(testData)，程序会报错
-如果fit_transfrom(trainData)后，使用fit_transform(testData)而不transform(testData)，虽然也能归一化，
-但是两个结果不是在同一个“标准”下的，具有明显差异。(一定要避免这种情况)
-
-validation_freq=1, 指使用验证集实施验证的频率。当等于1时代表每个epoch结束都验证一次
-verbose：日志展示，整数
-               0 :为不在标准输出流输出日志信息
-               1 :显示进度条
-"""
-    history = model.fit(x=x_train, y=y_train, epochs=epochs, batch_size=100, validation_split=0.1, callbacks=[cp_callback],
-                        validation_freq=1, verbose=0)
-    # model.summary()
-    get_para_save(model, p)  # 参数提取写入
-    return history
 
 
 # 参数提取,写入

@@ -765,7 +765,7 @@ def read_file(file):
             print(i)
 
 
-# 读dragon_tiger_all_inst_lgt2龙虎榜日期和日k线,把k数据插入dragon_tiger_all_inst_lgt2k
+# 读dragon_tiger_all_inst_lgt2龙虎榜日期和baostock日k线,把k数据插入dragon_tiger_all_inst_lgt2k
 def dragon_tiger_date_mark(path):
     import sqlite3
     import os
@@ -773,28 +773,27 @@ def dragon_tiger_date_mark(path):
     if os.path.isfile(path):
         with sqlite3.connect(path) as conn:
             cu = conn.cursor()
-            cu2 = conn.cursor()
-            cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC")
-            # cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC limit 300,5")
-            # cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC")
-            # cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC limit 0,50")
+            # cu2 = conn.cursor()
+            cu.execute("select id,date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC")
+            # cu.execute("select id,date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC limit 300,5")
             import baostock as bs
             # 登陆系统
-            lg = bs.login()
+            # lg = bs.login()
             if lg.error_code == "0":
                 stock_empty = []
                 rows = cu.fetchall()
                 # print(len(rows))
                 for ii in rows:
-                    trade_date = ii[0]
+                    trade_date = ii[1]
+                    # print(ii)
                     # print(trade_date)
                     if len(trade_date) > 10:
                         trade_date = trade_date[:10]
                     # 如果当天+1为交易日则返回,否则返回两周内最近一个交易日add_subtract="subtract"后退
                     # f = "d"返回2021 - 07 - 01,f="t"为2021 - 07 - 01 00：00：00.取当天num=0，最近一天num=1
-                    start = tools.get_late_trade_day_n(trade_date, add_subtract="sub",  num=20, f="t").strftime('%Y-%m-%d')
-                    end = tools.get_late_trade_day_n(trade_date, add_subtract="add", num=5, f="t").strftime('%Y-%m-%d')
-                    code = views.add_sh(ii[1], big="baostock")
+                    start = tools.get_late_trade_day_n(trade_date, add_subtract="sub",  num=5, f="t").strftime('%Y-%m-%d')
+                    end = tools.get_late_trade_day_n(trade_date, add_subtract="add", num=3, f="t").strftime('%Y-%m-%d')
+                    code = views.add_sh(ii[2], big="baostock")
                     """date	交易所行情日期
                     code	证券代码
                     open	开盘价
@@ -826,17 +825,21 @@ def dragon_tiger_date_mark(path):
                     if rs.data.__len__() == 0:
                         stock_empty.append([trade_date, start, code])
                         print(trade_date + "-" + start, code + "空")
+                    hh = 0
                     while (rr == '0') & rs.next():
-                        d = rs.get_row_data()
+                        # d = rs.get_row_data()
+                        hh += 1
+                        ss = [ii[0], hh]
+                        ss += rs.get_row_data()
+                        # print(ss)
                         try:
                             pass
-                            # cu2.execute("INSERT INTO dragon_tiger_all_inst_lgt2k_181001_211130 (date, code,open, high,low, close,preclose, volume,amount, adjustflag,turn, tradestatus,pctChg, peTTM,pbMRQ, psTTM,pcfNcfTTM, isST) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", d)
-                        except sqlite3.IntegrityError:
-                            pass
-                        # print(str(d[0] >= trade_date) + "空")
+                            # cu.execute("INSERT INTO dragon_tiger_all_inst_lgt2k_181001_211130_5 (dragon_id,son_id,date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM,isST) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", ss)
+                        except:
+                            print(trade_date, ss)
             print("空", stock_empty)
             cu.close()
-            cu2.close()
+            # cu2.close()
             bs.logout()
 
 
@@ -1035,16 +1038,15 @@ def dragon_tiger_add_mark(p):
 
 
 # 读dragon_tiger_all_inst_lgt2龙虎榜日期和dragon_tiger_all_inst_lgt2k日k线,把k数据插入dragon_tiger_all_inst_lgt2k_0 or 1,2
-def dragon_tiger_date_mark_0(path, number=3):  # sub=1,交易日期减一天， add=1加一天,number=3取几条数据
+def dragon_tiger_date_mark_0(path, number=5):  # number=3取几条数据
     import sqlite3
     import os
     from ..tool import tools
     if os.path.isfile(path):
         with sqlite3.connect(path) as conn:
             cu = conn.cursor()
-            cu2 = conn.cursor()
-            cu.execute("select distinct id,date,code FROM dragon_tiger_all_inst_lgt2_181001_211130_id ORDER BY date ASC")
-            # cu.execute("select distinct date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC limit 0,10")
+            cu.execute("select id,date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC")
+            # cu.execute("select id,date,code FROM dragon_tiger_all_inst_lgt2_181001_211130 ORDER BY date ASC limit 300,30")
             rows = cu.fetchall()
             # print(len(rows))
             for ii in rows:
@@ -1055,12 +1057,12 @@ def dragon_tiger_date_mark_0(path, number=3):  # sub=1,交易日期减一天， 
                 # 如果当天+1为交易日则返回,否则返回两周内最近一个交易日add_subtract="subtract"后退
                 # f = "d"返回2021 - 07 - 01,f="t"为2021 - 07 - 01 00：00：00.取当天num=0，最近一天num=1
                 code = views.add_sh(ii[2], big="baostock")
-                dat = tools.get_late_trade_day_n(trade_date, add_subtract="add", num=1, f="t").strftime('%Y-%m-%d')
+                dat = tools.get_late_trade_day_n(trade_date, add_subtract="add", num=2, f="t").strftime('%Y-%m-%d')
                 kk = 0
                 data_list = []
-                for yy in range(0, 30):
-                    aa = (code, dat)
-                    sql = "select * FROM dragon_tiger_all_inst_lgt2k_181001_211130_30 where code=? and date=? ORDER BY date ASC"
+                for yy in range(0, 12):
+                    aa = (ii[0], code, dat)
+                    sql = "select * FROM dragon_tiger_all_inst_lgt2k_181001_211130_5 where dragon_id=? and code=? and date=? ORDER BY date ASC"
                     cu.execute(sql, aa)
                     r2 = cu.fetchall()
                     """date	交易所行情日期
@@ -1085,42 +1087,42 @@ def dragon_tiger_date_mark_0(path, number=3):  # sub=1,交易日期减一天， 
                     if r2.__len__() == 1:
                         qq = r2[-1]  # 取最后一天数据
                         # print(trade_date, qq)
-                        pre_close = float(qq[6])
+                        pre_close = float(qq[8])
                         if pre_close and pre_close != 0:
-                            r_up = abs((float(qq[5]) - pre_close) / pre_close)  # print(d[5], d[6])  # close, pre_close
+                            r_up = abs((float(qq[7]) - pre_close) / pre_close)  # print(d[5], d[6])  # close, pre_close
                             if r_up < 0.11:
                                 for d in r2:
-                                    if d[11] == "0":
-                                        print("停牌", (trade_date, d[0], d[1]))
-                                    elif d[11] == "1":
+                                    if d[13] == "0":
+                                        print("停牌", (trade_date, d[2], d[3]))
+                                    elif d[13] == "1":
                                         kk += 1
-                                        # d = list(d)
-                                        st_id = [ii[0], kk]
-                                        st_id += list(d)
+                                        d = list(d)
+                                        d[1] = kk
+                                        # st_id = [ii[0], kk]
+                                        # st_id += list(d)
                                         # print(st_id)
-                                        data_list.append(st_id)
+                                        data_list.append(d)
                                     else:
                                         print("error,不为0，1", (trade_date, d[0], d[1]))
                             else:
-                                print("涨幅r_up > 0.11:", r2)
+                                print("涨幅r_up > 0.11:", r2[0][2:4])
                         else:
                             print("pre_close没有 or pre_close = 0:", r2)
                     else:
                         # pass
-                        if yy > 28:
+                        if yy > 10:
                             print("查询数量error" + trade_date, (dat, code, r2.__len__()))
                     dat = tools.get_late_trade_day_n(dat, add_subtract="sub", num=1, f="t").strftime(
                         '%Y-%m-%d')
                     # print("dat", dat)
                     if kk == number:
                         break
-                if len(data_list) == 3:
+                if len(data_list) == number:
                     for rr in data_list:
                         oo = ""
                         if oo:
-                            sql2 = "INSERT INTO dragon_tiger_all_inst_lgt2k_181001_211130_1 (dragon_id,son_id,date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM, isST) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
-                            cu2.execute(sql2, rr)
+                            sql2 = "INSERT INTO dragon_tiger_all_inst_lgt2k_181001_211130_4 (dragon_id,son_id,date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,pctChg,peTTM,pbMRQ,psTTM,pcfNcfTTM, isST) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+                            cu.execute(sql2, rr)
                 else:
-                    print("数量不足", (trade_date,  len(data_list), data_list))
+                    print("数量不足", [trade_date,  len(data_list), data_list[0][2:4]])
             cu.close()
-            cu2.close()
