@@ -400,7 +400,6 @@ def easy_trade(request):
         stock_trade = []
         # 读取choice板块买入
         with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
-            # conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
             cu = conn.cursor()
             for ii in ["choice.blk", "choice_sell.blk"]:
                 stock_list = read_choice_code(ii)
@@ -426,8 +425,6 @@ def easy_trade(request):
                             xd_2108 = ""
                         cu.execute("select xd_2102,xd_2103,xd_2127 FROM ymd_1280194006 where xd_2102='{}'".format(item[3:]))
                         for t in cu:
-                            # print(t[1])
-                            # print(t[1].decode(encoding='utf8'))
                             stock_trade.append({
                                 "xd_2102": t[0],
                                 "xd_2103": t[1],
@@ -437,8 +434,6 @@ def easy_trade(request):
                                 "xd_2126": num,
                                 "xd_2108": xd_2108,
                             })
-
-            #     # log_on_ht()  # 登录海通
             cu.close()
         if stock_trade:
             with sqlite3.connect(mysetting.TRADE_PATH) as conn:
@@ -514,7 +509,7 @@ def easy_trade(request):
                                 for dd in stock_dict:
                                     ii["da"] = dd["da"]
                                     ii["close"] = dd["xd_2127"]
-                pprint(results)
+                # pprint(results)
                 cu.close()
         return JsonResponse({'show_pre': results})
 
@@ -527,12 +522,9 @@ def easy_trade(request):
             trade_date = tools.get_date()  # 获取那一天数据
             if os.path.isfile(mysetting.DATA_TABLE_DB):
                 with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
-                    # conn.text_factory = lambda x: str(x, 'gbk', 'ignore')
                     cu = conn.cursor()
                     cu.execute("delete FROM ymd_1280194006 WHERE da!='{}'".format(str(trade_date)))
                     cu.execute("select xd_2102 FROM ymd_1280194006")
-                    # columns = [_[0].lower() for _ in cu.description]
-                    # results = [dict(zip(columns, _)) for _ in cu]
                     results = [_[0] for _ in cu]
                     cu.close()
                 if results:
@@ -591,14 +583,15 @@ def insert_close(stock_list):
         stock_list[i] = v
     # print("插入收盘价", stock_list)
     stock_dict = get_stock_close(stock_list)  # 获取交易数据
+    # pprint(stock_dict)
     if stock_dict:
         with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
             cu = conn.cursor()
             # cu.execute("delete FROM ymd_1280194006 WHERE da!='{}'".format(str(trade_date)))
             for t in stock_dict:
+                # print(t["xd_2103"], t)
                 cu.execute(
                     "INSERT INTO ymd_1280194006 (da,xd_2102,xd_2103,xd_2127) VALUES(?,?,?,?)",
-                    # "INSERT INTO ymd_1280194006 (dat,xd_2102,xd_2103,xd_2106,xd_2109,xd_2127,xd_2126,xd_2108,xd_2105,xd_3630) VALUES(?,?,?,?,?,?,?,?,?,?)",
                     (
                         t["da"],
                         t["xd_2102"],
@@ -626,10 +619,15 @@ def get_stock_close(stock_list):
         if d_now.hour <= 9:
             # 取昨天(d_now + timedelta(-1)).date()
             stock_dict = easy_trade.inquiry_close(stock_list, str((d_now + timedelta(-1)).date()))
-        elif 18 >= d_now.hour > 9:
+        elif (d_now.hour > 9) and (d_now.hour < 18):
+            # print("eee", d_now.hour)
+            # print("eee", d_now.hour > 9)
+            # print("eee", d_now.hour < 18)
+            # stock_dict = []
             stock_dict = get_xin_lan(stock_list)  # 循环获取新浪行情构建数据
         else:
             stock_dict = easy_trade.inquiry_close(stock_list, str(trade_day))
+            # print(stock_dict)
     else:
         stock_dict = easy_trade.inquiry_close(stock_list, str(trade_day))
     # print("get_trade_data", stock_dict)

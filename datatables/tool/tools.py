@@ -120,10 +120,12 @@ def create_zip(start_dir, tagger, f="local"):
 
 # 判断返回那一天
 def get_date():
-    from chinese_calendar import is_workday
+    from chinese_calendar import is_workday, is_holiday
     now = datetime.datetime.now()
     my_date = now.date()
+    # print(my_date)
     iss = is_workday(my_date)
+    iss2 = is_holiday(my_date)
     if not iss:
         my_da = (now + datetime.timedelta(-1)).date()
         iss = is_workday(my_da)

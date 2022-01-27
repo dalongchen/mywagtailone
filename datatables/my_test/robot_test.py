@@ -71,26 +71,7 @@ def classify0(inX, dataSet, labels, k):
     return sortedClassCount[0][0]
 
 
-#  读取文件到矩阵
-def file2matrix(filename):
-    fr = open(filename)
-    arrayOfLines = fr.readlines()
-    numberOfLines = len(arrayOfLines)  # 得到文件行数
-    # print(numberOfLines)
-    returnMat = zeros((numberOfLines, 3))  # 定义一个全为0的矩阵
-    # print(returnMat)
-    classLabelVector = []
-    index = 0
-    for line in arrayOfLines:
-        # strip()方法用于移除字符串头尾指定的字符（默认为空格或换行符）或字符序列。
-        # 注意：该方法只能删除开头或是结尾的字符，不能删除中间部分的字符
-        line = line.strip()
-        listFromLine = line.split('\t')  # 按中间跳格符\t分割为list。 \t 跳格  \r 回车 \n 换行
-        # print(listFromLine[0:3])
-        returnMat[index, :] = listFromLine[0:3]
-        classLabelVector.append(int(listFromLine[-1]))  # -1表示列表中的最后一列元素，
-        index += 1
-    return returnMat, classLabelVector
+
 
 
 # 归一化数值
@@ -111,30 +92,7 @@ def autoNorm(dataSet):
     return normDataSet, ranges, minvals
 
 
-# 测试算法
-def datingClassTest():
-    hoRatio = 0.10  # 设置测试集比重，前10%作为测试集，后90%作为训练集
-    # datingLabels为1，2，3标签
-    datingDataMat, datingLabels = file2matrix(r"D:\ana\envs\py36\mywagtailone\datatables\my_test\machinelearninginaction\Ch02\datingTestSet2.txt")
-    # print(datingLabels)
-    # print(datingDataMat)
-    normMat, ranges, minvals = autoNorm(datingDataMat)
-    # print(normMat)
-    m = normMat.shape[0]  # 得到样本数量m=1000
-    # print(m)
-    numTestVecs = int(m * hoRatio)  # 得到测试集最后一个样本的位置=100
-    # print(numTestVecs)
-    errorCount = 0.0   # 初始化定义错误个数为0
-    for i in range(numTestVecs):
-        # 测试集中元素逐一放进分类器测试，k = 3
-        classifierResult = classify0(normMat[i, :], normMat[numTestVecs:m, :], datingLabels[numTestVecs:m], 3)
-        # 输出分类结果与实际label
-        print("the classifier came back with: %d, the real answer is: %d" % (classifierResult, datingLabels[i]))
-        # 若预测结果与实际label不同，则errorCount+1
-        if (classifierResult != datingLabels[i]):
-            errorCount += 1.0
-        # 输出错误率 = 错误的个数 / 总样本个数
-        print("the total error rate is: %f" % (errorCount / float(numTestVecs)))
+
 
 
 # 神经网络图片识别
@@ -822,11 +780,11 @@ def evaluate_naive_method(val_steps, val_gen, std):
 
 
 # 股票预测 p为数据库路径, dnn0删除
-def predict_stock(p, train_num=512, method="dnn"):
+def predict_stock(p, train_num=256, method="dnn"):
     if os.path.isfile(p):
         # float_data = stock_predict_read_data(p)  # 股票数据的读取和整理0天, 当天
         float_data = stock_predict_read_data_n(p)  # 股票数据的读取和整理1天
-        uu = "m"
+        uu = "2"
         if uu:
             x_train, y_train, x_test, y_test, sc2 = min_max_scale(float_data)  # 标准化或归一化
             # print('x_train', x_train.shape)
@@ -1466,7 +1424,8 @@ def stock_predict_read_data_n(p):
             # print("ro", ro[0:2])
             try:
                 if ro[0][0] == 1:  # son_id
-                    price = ro[0][1]  # 开盘价 如果加date和code 为cu.fetchall()[0][2]
+                    price = ro[0][4]  # 收盘价
+                    # price = ro[0][1]  # 开盘价
                     # print(price)
                 else:
                     print("son_id error ro[0]", (trade_date, ro[0]))
@@ -1515,7 +1474,7 @@ def stock_predict_read_data_n(p):
                 pass
                 # print("没有k线数据", ii[1: 3])
         cu.close()
-        bb = "h"
+        bb = "1"
         if bb:
             # print(st)
             print("第一条数据", (rows[0][:2], st[0][-5:]))
