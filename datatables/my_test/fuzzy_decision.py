@@ -148,45 +148,23 @@ def multiple_fuzzy_decision():
     # from sklearn import preprocessing
     pp = r'C:\Users\Administrator\Desktop\test1.xlsx'
 
-    # lgt综合评价矩阵
-    def lgt_comprehensive_evaluation_matrix():
-        dff = pd.read_excel(pp, sheet_name="lgt", engine='openpyxl')
+    # lgt,organization buy 综合评价矩阵
+    def lgt_comprehensive_evaluation_matrix(f):
+        dff = pd.read_excel(pp, sheet_name=f, engine='openpyxl')
         ind = dff.columns.get_loc("权重")  # 获取列所在的索引
         # 把'指标'这列，转为行索引
         dff.set_index('指标', inplace=True)
         net_purchase = dff.loc['净买入', ][ind:]
         buy = dff.loc['buy', ][ind:]
         sell = dff.loc['sell', ][ind:]
-        ne = net_purchase/5
-        sb = []
-        n = np.where(ne > 1, 1, ne)  # numpy.where (condition[, x, y])满足条件(condition)，输出x，不满足输出y。
-        for i, tt in enumerate(buy):
-            if tt > 0.6:
-                ttt0 = 1 - (sell[i] / tt)
-                if ttt0 < 0.5:
-                    sb.append(0)
-                else:
-                    sb.append(ttt0)
-            else:
-                ttt = 1 - (sell[i] / tt)
-                if ttt == 1:
-                    sb.append(ttt*tt)
-                    # print(ttt*0.5)
-                elif ttt < 0.5:
-                    sb.append(0)
-                else:
-                    sb.append(ttt*tt)
-                    # print(ttt*ttt)
-        # bbb = buy[buy < 0.6].index
-        # print(bbb.shape)
-        # print(bbb.shape[0])
-        # print(bbb == [])
-        # sb = 1 - (sell / buy)
-        # ff = sb[bbb]
-        # sb[bbb] = ff*ff
-        # print(sb)
-        # b = np.where(sb < 0.5, 0, sb)
-        lis = [n, sb]
+        ne = net_purchase/7
+        n2 = np.where(ne > 1, 1, ne)  # numpy.where (condition[, x, y])满足条件(condition)，输出x，不满足输出y。
+        l_se_bu = 1 - (sell / buy)
+        n = n2*l_se_bu  # 净买入*买卖比
+        for i, net_pur in enumerate(net_purchase):
+            if net_pur < 1:  # 小于1k是处理前净买入*买卖比
+                l_se_bu[i] = net_pur*l_se_bu[i]
+        lis = [n.to_list(), l_se_bu]
         print(pd.DataFrame(lis))
         weigh = dff["权重"]
         weigh = weigh[weigh.notnull()]
@@ -194,40 +172,145 @@ def multiple_fuzzy_decision():
         print("aa,矩阵乘法")
         lg = weigh.dot(lis)
         return lg
-    ddd = "matrix"
-    if ddd == "matrix":
-        lgt = lgt_comprehensive_evaluation_matrix()
+    ddd = "lgt"
+    if ddd == "lgt":
+        lgt = lgt_comprehensive_evaluation_matrix("lgt")
         print(lgt)
+    # elif ddd == "organization":
+        organization = lgt_comprehensive_evaluation_matrix("organization")
+        print(organization)
 
-    # organization综合评价矩阵
-    def organization_comprehensive_evaluation_matrix():
-        dff = pd.read_excel(pp, sheet_name="lgt", engine='openpyxl')
+    # total综合评价矩阵
+    def total_comprehensive_evaluation_matrix(f):
+        dff = pd.read_excel(pp, sheet_name=f, engine='openpyxl')
         ind = dff.columns.get_loc("权重")  # 获取列所在的索引
-        # print(ind)
-        # dff2 = dff.iloc[:, ind+1:]
-        # 把'指标'这列，转为航索引
+        # 把'指标'这列，转为行索引
         dff.set_index('指标', inplace=True)
         net_purchase = dff.loc['净买入', ][ind:]
         buy = dff.loc['buy', ][ind:]
         sell = dff.loc['sell', ][ind:]
-        ne = net_purchase/5
-        n = np.where(ne > 1, 1, ne)  # numpy.where (condition[, x, y])满足条件(condition)，输出x，不满足输出y。
-        n = np.where(n < 0.6, 0, n)
-        # print(n)
-        sb = 1 - (sell / buy)
-        b = np.where(sb < 0.5, 0, sb)
-        # print(b)
-        lis = [n, b]
-        weight = dff["权重"]
-        weight = weight[weight.notnull()]
-        print(weight)
+        # net_purchase = np.where(net_purchase <= 0, 0, net_purchase)  # numpy.where (condition[, x, y])满足条件(condition)，输出x，不满足输出y。
+        # for i, net_pur in enumerate(net_purchase):
+        #     if net_pur > 0:
+        #         net_purchase[i] = 1-np.power(2.718, -0.8*net_purchase[i])
+        l_se_bu = buy
+        for i, buy0 in enumerate(buy):
+            if buy0 < 1:  #
+                net_purchase[i] = 0
+                l_se_bu[i] = 0
+            else:
+                if net_purchase[i] < 0:
+                    net_purchase[i] = 0
+                    l_se_bu[i] = 0
+                else:
+                    net_purchase[i] = 1-np.power(2.718, -0.3*(net_purchase[i]+0))
+                    l_se_bu[i] = np.power(2.718, -1.5*(sell[i]/buy0))
+        lis = [net_purchase, l_se_bu]
+        print(pd.DataFrame(lis))
+        weigh = dff["权重"]
+        weigh = weigh[weigh.notnull()]
+        print(weigh)
         print("aa,矩阵乘法")
-        print(weight.dot(lis))
-        return lis
-    ddd = "matrix0"
-    if ddd == "matrix":
-        organization = organization_comprehensive_evaluation_matrix()
-        print(pd.DataFrame(organization))
+        lg = weigh.dot(lis)
+        return lg
+    ddd = "total"
+    if ddd == "total":
+        total = total_comprehensive_evaluation_matrix("total")
+        print(total)
+
+    # buy organization number综合评价矩阵
+    def organization_num_comprehensive_evaluation_matrix(f):
+        dff = pd.read_excel(pp, sheet_name=f, engine='openpyxl')
+        ind = dff.columns.get_loc("权重")  # 获取列所在的索引
+        # 把'指标'这列，转为行索引
+        dff.set_index('指标', inplace=True)
+        net_purchase = dff.loc['净买入', ][ind:]
+        buy = dff.loc['buy', ][ind:]
+        sell = dff.loc['sell', ][ind:]
+        # n = np.where(net_purchase == 1, 1 - np.power(2.718, -0.8 * 1), net_purchase)
+        # n = np.where(n == 2, 1 - np.power(2.718, -0.8 * 2), n)
+        # # print(n)
+        # n = np.where(n >= 3, 1, n)  # numpy.where (condition[, x, y])满足条件(condition)，输出x，不满足输出y。
+        # n = np.where(n <= 0, 0, n)
+        dd9 = "matrix"
+        if dd9 == "matrix":
+            se_bu = sell / buy
+            for i, bu in enumerate(buy):
+                if bu == 1:  #
+                    if sell[i] == 0:
+                        se_bu[i] = 0
+                        net_purchase[i] = 1
+                    else:
+                        se_bu[i] = np.power(2.718, -3*se_bu[i])
+                        net_purchase[i] = 0
+                elif bu == 2:
+                    if sell[i] == 0:
+                        se_bu[i] = 0.75
+                        net_purchase[i] = 0.75
+                    else:
+                        se_bu[i] = np.power(2.718, -1.4*se_bu[i])
+                        net_purchase[i] = 1 - np.power(2.718, -0.15 * (net_purchase[i]+3))
+                elif bu == 3:
+                    if sell[i] == 0:
+                        se_bu[i] = 1
+                        net_purchase[i] = 1
+                    else:
+                        se_bu[i] = np.power(2.718, -0.35 * se_bu[i])  # k小越大 k大越小
+                        net_purchase[i] = 1 - np.power(2.718, -0.75 * (net_purchase[i] + 3))  # k大越大
+                elif bu > 3:
+                    se_bu[i] = 1
+                    net_purchase[i] = 1
+                else:
+                    print("miss")
+            lis = [net_purchase, se_bu]
+            print(pd.DataFrame(lis))
+            weigh = dff["权重"]
+            weigh = weigh[weigh.notnull()]
+            print(weigh)
+            print("organization_num矩阵乘法")
+            lg = weigh.dot(lis)
+            return lg
+    ddd = "organization_num"
+    if ddd == "organization_num":
+        organization_num = organization_num_comprehensive_evaluation_matrix("organization_num")
+        print(organization_num)
+
+    # other综合评价矩阵
+    def other_comprehensive_evaluation_matrix(f):
+        dff = pd.read_excel(pp, sheet_name=f, engine='openpyxl')
+        ind = dff.columns.get_loc("权重")  # 获取列所在的索引
+        # 把'指标'这列，转为行索引
+        dff.set_index('指标', inplace=True)
+        market_value = dff.loc['市值', ][ind:]
+        lg_tong = dff.loc['陆股通', ][ind:]
+        add = dff.loc['增长', ][ind:]
+        organizate = dff.loc['机构股东', ][ind:]
+        lose = dff.loc['亏', ][ind:]
+        # net_purchase = np.where(net_purchase <= 0, 0, net_purchase)  # numpy.where (condition[, x, y])满足条件(condition)，输出x，不满足输出y。
+        for i, market_value0 in enumerate(market_value):
+            market_value[i] = 1 - np.power(2.718, -1.7 * (market_value0/100 + 0))
+        for i, lgt0 in enumerate(lg_tong):
+            lg_tong[i] = 1-np.power(2.718, -60*lgt0)
+        lis = [market_value, lg_tong, add, organizate, lose]
+        print(pd.DataFrame(lis))
+        weigh = dff["权重"]
+        weigh = weigh[weigh.notnull()]
+        print(weigh)
+        print("aa,矩阵乘法")
+        lg = weigh.dot(lis)
+        return lg
+    ddd = "other"
+    if ddd == "other":
+        other = other_comprehensive_evaluation_matrix("other")
+        print(other)
+    lis_total = pd.DataFrame([lgt, organization, total, organization_num, other])
+    print(lis_total)
+    print("lis_total,矩阵乘法")
+    data = pd.DataFrame([0.2, 0.2, 0.2, 0.2, 0.2])
+    data = pd.DataFrame(data.values.T, index=data.columns, columns=data.index)
+    print(data.shape)
+    total_comp = data.dot(lis_total)
+    print(total_comp)
 
     # 模糊矩阵合成，先取小，再取大,M（Λ，V）
     def fuzzy_matrix_synthesis(matrix_a, matrix_b):
