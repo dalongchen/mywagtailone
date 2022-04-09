@@ -344,7 +344,7 @@ def update_bond_day_year():
                 print("债券年收益率：{} ".format(year_bond_yield - 1))
             else:
                 year_bond_yield = ""
-                print("not redeem_price, year_diff", dd)
+                print("not redeem_price,2233 year_diff", dd)
         cur.close()
 
 
