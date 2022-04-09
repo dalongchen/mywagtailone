@@ -174,6 +174,13 @@ def east_money_lgt(request):
         else:
             return JsonResponse({'number': "没有e盘"})
 
+    # 东财 可转债
+    if s == "kzz":
+        # print(s)
+        # if d_t:
+        return JsonResponse({'number': east_kzz()})
+        # return JsonResponse({'number': '缺日期'})
+
     #  同花顺陆股通  # 需要改cookie
     if s == "ths_lgt":
         if d_t:
@@ -396,7 +403,7 @@ def easy_trade(request):
     if s == "pre_paid":
         easy_trade.trade_save()  # 另存持仓数据
         sleep(2)
-        df = pd.read_table(r"D:\ana\envs\py36\mywagtailone\my_ignore\table.xls", usecols=["证券代码", "股票余额"], encoding="gbk")
+        df = pd.read_table(r"D:\ana\envs\py36\mywagtailone\my_ignore\table.xls", usecols=["证券代码", "股票余额"], encoding="gbk", converters={0: str})
         stock_trade = []
         # 读取choice板块买入
         with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
@@ -524,9 +531,11 @@ def easy_trade(request):
                 with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
                     cu = conn.cursor()
                     cu.execute("delete FROM ymd_1280194006 WHERE da!='{}'".format(str(trade_date)))
-                    cu.execute("select xd_2102 FROM ymd_1280194006")
-                    results = [_[0] for _ in cu]
                     cu.close()
+                    cu2 = conn.cursor()
+                    cu2.execute("select xd_2102 FROM ymd_1280194006")
+                    results = [_[0] for _ in cu2]
+                    cu2.close()
                 if results:
                     ret = [i for i in stock_list if i not in results]  # 从stock_list去除results中也有的元素
                     # pprint(ret)
@@ -619,11 +628,7 @@ def get_stock_close(stock_list):
         if d_now.hour <= 9:
             # 取昨天(d_now + timedelta(-1)).date()
             stock_dict = easy_trade.inquiry_close(stock_list, str((d_now + timedelta(-1)).date()))
-        elif (d_now.hour > 9) and (d_now.hour < 18):
-            # print("eee", d_now.hour)
-            # print("eee", d_now.hour > 9)
-            # print("eee", d_now.hour < 18)
-            # stock_dict = []
+        elif (d_now.hour > 9) and (d_now.hour < 17):
             stock_dict = get_xin_lan(stock_list)  # 循环获取新浪行情构建数据
         else:
             stock_dict = easy_trade.inquiry_close(stock_list, str(trade_day))
@@ -655,47 +660,15 @@ def get_xin_lan(stock_list):
     return stock
 
 
-# 网易 作废，更新不及时，历史行情 0代表sh,0 000300=sh000300为上海指数 1代表sz。1000300=sz000300为深圳股票
-def w163_history(code):
-    code = code_add(code, param="param")
-    print(code, "poy")
-    # v = requests.get( "http://quotes.money.163.com/service/chddata.html?code={}&start={}&end={}&fields=TCLOSE;HIGH;LOW;TOPEN;LCLOSE;CHG;PCHG;TURNOVER;VOTURNOVER;VATURNOVER;TCAP;MCAP".format(code, "20210506", "20210506"))
-    # 能用的原始请求，留着
-    # 日期, 股票代码, 名称, 收盘价, 最高价, 最低价, 开盘价, 前收盘, 涨跌额, 涨跌幅, 换手率, 成交量, 成交金额, 总市值, 流通市值, 成交笔数
-    # 2015 - 09 - 11, '000001,上证指数,3200.234,3223.762,3163.449,3189.479,3197.893,2.341,0.0732,,224557822,2.52769467178e+11,,,None
-    # 2015 - 09 - 10, '000001,上证指数,3197.893,3243.281,3178.904,3190.553,3243.089,-45.196,-1.3936,,273261759,2.99581090523e+11,,,None
-    v = requests.get("http://quotes.money.163.com/service/chddata.html?code=1301040&start=20210901&end=20210904")
-    if v.status_code == 200:
-        text = v.text
-        print(text)
-        if text:
-            try:
-                t = text.split("\r")[1].split(",")
-                # print(t[3], t[9])
-                # print(t[10], t[12])
-                # print(t[13], t[14])
-                # print(t, "piu")
-                return {
-                    "date": t[0].strip(),
-                    "name": t[2],
-                    "close": t[3],
-                    "up": t[9],
-                    "turnover": t[10],
-                    "va": t[12],
-                    "total": t[13],
-                    "circulate": t[14]
-                }
-            except:
-                print("没有数据")
-                return ""
-    return ""
-
-
 # one 新浪即时行情
 # 75.730,75.400,79.000,现价 79.480, 75.500, 79.000, 79.010, 3197647,总量 250231897.790,成交金额 2021-05-31,15:00:00,
 def sina_real_time(code):
+    headers = {'Referer': 'https://finance.sina.com.cn'}
+    url = 'https://hq.sinajs.cn/list={}'.format(add_sh(code))
+    vv = requests.get(url=url, headers=headers)
+    # print(vv.text)
     # add_sh(code)
-    vv = requests.get("http://hq.sinajs.cn/list={}".format(add_sh(code)))
+    # vv = requests.get("http://hq.sinajs.cn/list={}".format(add_sh(code)))
     text = vv.text
     if vv.status_code == 200 and text:
         detail = text.split("\"")[1].split(",")
@@ -2412,6 +2385,128 @@ def east_dragon_tiger_new_son(net):
             return tiger_list
     # print("陆股通龙虎榜为空")
     return []
+
+
+# 读东财可转债
+def east_kzz():
+    # 龙虎榜净买入排序,一次只能读取500条
+    net = "https://datacenter-web.eastmoney.com/api/data/v1/get?callback=&sortColumns=PUBLIC_START_DATE&sortTypes=-1&pageSize={}&pageNumber={}&reportName=RPT_BOND_CB_LIST&columns=ALL&quoteColumns=f2~01~CONVERT_STOCK_CODE~CONVERT_STOCK_PRICE%2Cf235~10~SECURITY_CODE~TRANSFER_PRICE%2Cf236~10~SECURITY_CODE~TRANSFER_VALUE%2Cf2~10~SECURITY_CODE~CURRENT_BOND_PRICE%2Cf237~10~SECURITY_CODE~TRANSFER_PREMIUM_RATIO%2Cf239~10~SECURITY_CODE~RESALE_TRIG_PRICE%2Cf240~10~SECURITY_CODE~REDEEM_TRIG_PRICE%2Cf23~01~CONVERT_STOCK_CODE~PBV_RATIO&source=WEB&client=WEB"
+    page = 1
+    with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM kzz")
+        for t in range(1, 10):
+            if t > page:
+                break
+            print("t", t)
+            dragon_t = requests.get(net.format(500, t))
+            dragon_tiger = dragon_t.text
+            # print(dragon_tiger)
+            if dragon_t.status_code == 200 and dragon_tiger:
+                dragon_tiger = demjson.decode(dragon_tiger)
+
+                """{'security_code': '123143',
+                'secucode': '123143.sz',
+                'trade_market': 'cnsesz',
+                'security_name_abbr': '胜蓝转债',
+                'delist_date': none,
+                'listing_date': none,
+                'convert_stock_code': '300843',
+                'bond_expire': '6',
+                'rating': 'aa-',
+                'value_date': '2022-03-31 00:00:00',
+
+                'issue_year': '2022',
+                'cease_date': '2028-03-30 00:00:00',
+                'expire_date': '2028-03-31 00:00:00',
+                'pay_interest_day': '03-31',
+                'interest_rate_explain': '第一年为0.40%,第二年为0.60%,第三年为1.0%,第四年为1.50%,第五年为2.00%,第六年为2.50%。',
+                'bond_combine_code': '22270600001lff',
+                'actual_issue_scale': 3.3,
+                'issue_price': 100,
+                'remark': '本次发行的胜蓝转债向股权登记日收市后中国证券登记结算有限责任公司深圳分公司登记在册的原股东优先配售,原股东优先配售后余额部分(含原股东放弃优先配售部分)通过深交所交易系统网上向社会公众投资者发行。认购金额不足33,000.00万元的部分由保荐机构(主承销商)包销。主承销商根据实际资金到账情况确定最终配售结果和包销金额,当包销比例超过本次发行总额的30%时,保荐人(主承销商)将启动内部承销风险评估程序,并与发行人协商一致后继续履行发行程序或采取中止发行措施,并及时向深交所报告。',
+                'par_value': 100,
+
+                'issue_object': '1)向发行人的原a股股东优先配售:发行公告公布的股权登记日(2022年3月30日,t-1日)收市后登记在册的发行人a股股东。2)网上发行:持有深交所证券账户的社会公众投资者,包括:自然人、法人、证券投资基金、符合法律规定的其他投资者等(法律法规禁止购买者除外)。3)保荐机构(主承销商)的自营账户不得参与网上申购。',
+                'redeem_type': none,
+                'execute_reason_hs': none,
+                'notice_date_hs': none,
+                'notice_date_sh': none,
+                'execute_price_hs': none,
+                'execute_price_sh': none,
+                'record_date_sh': none,
+                'execute_start_datesh': none,
+                'execute_start_datehs': none,
+
+                'execute_end_date': none,
+                'correcode': '370843',
+                'correcode_name_abbr': '胜蓝发债',
+                'public_start_date': '2022-03-31 00:00:00',
+                'correcodeo': '380843',
+                'correcode_name_abbro': '胜蓝配债',
+                'bond_start_date': '2022-04-06 00:00:00',
+                'security_start_date': '2022-03-30 00:00:00',
+                'security_short_name': '胜蓝股份',
+                'first_per_preplacing': 2.2162,
+
+                'online_general_aau': 1000,
+                'online_general_lwr': 0.0003930271,
+                'initial_transfer_price': 23.45,
+                'transfer_end_date': '2028-03-30 00:00:00',
+                'transfer_start_date': '2022-10-10 00:00:00',
+                'resale_clause': '(1)有条件回售条款在本次发行的可转换公司债券最后两个计息年度,如果公司股票在任何连续三十个交易日的收盘价格低于当期转股价的70%时,可转换公司债券持有人有权将其持有的可转换公司债券全部或部分按面值加上当期应计利息的价格回售给公司。若在上述交易日内发生过转股价格因发生送红股、转增股本、增发新股(不包括因本次发行的可转换公司债券转股而增加的股本)、配股以及派发现金股利等情况而调整的情形,则在调整前的交易日按调整前的转股价格和收盘价格计算,在调整后的交易日按调整后的转股价格和收盘价格计算。如果出现转股价格向下修正的情况,则上述“连续三十个交易日”须从转股价格调整之后的第一个交易日起重新计算。最后两个计息年度可转换公司债券持有人在每年回售条件首次满足后可按上述约定条件行使回售权一次,若在首次满足回售条件而可转换公司债券持有人未在公司届时公告的回售申报期内申报并实施回售的,该计息年度不能再行使回售权,可转换公司债券持有人不能多次行使部分回售权。(2)附加回售条款若公司本次发行的可转换公司债券募集资金投资项目的实施情况与公司在募集说明书中的承诺情况相比出现重大变化,根据中国证监会的相关规定被视作改变募集资金用途或被中国证监会认定为改变募集资金用途的,可转换公司债券持有人享有一次回售的权利。可转换公司债券持有人有权将其持有的可转换公司债券全部或部分按债券面值加上当期应计利息价格回售给公司。持有人在附加回售条件满足后,可以在公司公告后的附加回售申报期内进行回售,该次附加回售申报期内不实施回售的,不应再行使附加回售权。上述当期应计利息的计算公式为:ia=b*i*t/365ia:指当期应计利息;b:指本次发行的可转换公司债券持有人持有的将回售的可转换公司债券票面总金额;i:指可转换公司债券当年票面利率;t:指计息天数,即从上一个付息日起至本计息年度回售日止的实际日历天数(算头不算尾)。',
+                'redeem_clause': '(1)到期赎回条款在本次发行的可转换公司债券期满后五个交易日内,公司将以本次可转债票面面值的112%(含最后一期利息)的价格向投资者赎回全部未转股的可转换公司债券。(2)有条件赎回条款在本次可转换公司债券转股期内,当下述两种情形的任意一种出现时,公司有权决定按照债券面值加当期应计利息的价格赎回全部或部分未转股的可转换公司债券:①在转股期内,如果公司股票在任何连续三十个交易日中至少十五个交易日的收盘价格不低于当期转股价格的130%(含130%);②当本次发行的可转换公司债券未转股余额不足3,000万元时。当期应计利息的计算公式为:ia=b×i×t/365ia:指当期应计利息;b:指本次发行的可转换公司债券持有人持有的将被赎回的可转换公司债券票面总金额;i:指可转换公司债券当年票面利率;t:指计息天数,即从上一个付息日起至本计息年度赎回日止的实际日历天数(算头不算尾)。若在前述三十个交易日内发生过转股价格调整的情形,则在调整前的交易日按调整前的转股价格和收盘价计算,调整后的交易日按调整后的转股价格和收盘价计算。',
+                'party_name': '中证鹏元资信评估股份有限公司',
+                'convert_stock_price': 21.0,
+                'transfer_price': 23.45,
+
+                'transfer_value': 89.5522,
+                'current_bond_price': '-',
+                'transfer_premium_ratio': 11.67,
+                'convert_stock_pricehq': none,
+                'market': none,
+                'resale_trig_price': 16.42,
+                'redeem_trig_price': 30.49,
+                'pbv_ratio': 3.34,
+                'ib_start_date': '2022-03-31 00:00:00',
+                 'ib_end_date': '2023-03-30 00:00:00',
+
+                 'cashflow_date': '2023-03-31 00:00:00',
+                 'coupon_ir': 0.4,
+                 'param_name': '交易所系统网上向社会公众投资者发行,交易所系统网上向原a股无限售股东优先配售',
+                 'issue_type': '1,4',
+                 'execute_reason_sh': none,
+                 'paydaynew': '-31',
+                 'current_bond_pricenew': 100,
+                 'is_convert_stock': '否',
+                 'is_redeem': '是',
+                 'is_sellback': '是'}
+"""
+                d = dragon_tiger.get('result', '')
+                if t == 1:  # 第一页时获取总页数
+                    page = d.get('pages', '')
+                    print("page", page)
+                dr = d.get('data', '')
+                # print("dr", len(dr))
+                # dr = ""
+                if dr:
+                    for ii in dr:
+                        i = list(ii.values())
+                        # print("klkk", len(i))
+                        # print("llllllkj", ii)
+                        # print("key", ii.key())
+                        sql = """INSERT INTO kzz VALUES
+                        (?,?,?,?,?,?,?,?,?,?,
+                        ?,?,?,?,?,?,?,?,?,?,
+                        ?,?,?,?,?,?,?,?,?,?,
+                        ?,?,?,?,?,?,?,?,?,?,
+                        ?,?,?,?,?,?,?,?,?,?,
+                        ?,?,?,?,?,?,?,?,?,?,
+                        ?,?,?,?,?,?,?,?,?,?)
+                        """
+                        cur.execute(sql, i)
+        cur.close()
+    return "kzz ok"
 
 
 # 同花顺资金流入, 资金净买入大于10万; 涨幅大于1%

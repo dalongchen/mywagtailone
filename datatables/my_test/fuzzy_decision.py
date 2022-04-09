@@ -1,3 +1,10 @@
+import requests
+import json
+import os
+from ..tool import mysetting
+import sqlite3
+
+
 def fuzzy_decision():
     # 模糊综合评价，计算模糊矩阵和指标权重
     import pandas as pd
@@ -381,3 +388,162 @@ def multiple_fuzzy_decision():
         aa = fuzzy_matrix_synthesis3(weight, co)
         print("aa3,先取小，再求和")
         print(aa)
+
+
+# 获取龙虎榜数据
+def fuzzy_dragon_tiger():
+    # 判断路径是否存在
+    def is_not_path(file):
+        for u in mysetting.ZQ_URL:  # 证券行情软件路径
+            if os.access(u + file, os.F_OK):
+                # print(u + file)
+                return u + file
+
+    # 读交易软件里龙虎榜股票代码
+    def read_dragon_code(file):
+        path = is_not_path(file)
+        # print("read...." + file)
+        with open(path) as f:  # 自动关闭
+            # stock_list = f.readlines()
+            # splitlines() 按照行('\r', '\r\n', \n')分隔，返回一个包含各行作为元素的列表，如果参数 keepends 为默认 False，不包含换行符，如果为 True，则保留换行符
+            stock_list = f.read().splitlines()
+            # print(stock_list)
+            if stock_list:
+                for i, value in enumerate(stock_list):
+                    if value == "\n":
+                        stock_list.remove("\n")
+                    elif value == "":
+                        stock_list.remove("")
+            # print("stock_list", stock_list)
+            return stock_list
+
+    # nineteen 龙虎榜
+    def per_dragon_tiger(code, header):
+        date_li = per_dragon_tiger1(code, header)
+        if len(date_li) > 2:
+            date_li = date_li[0:1]
+        # print(date_li)
+        # return ""
+        return per_dragon_tiger2(code, date_li, header)
+
+    #  龙虎榜son1,获取个股龙虎榜日期
+    def per_dragon_tiger1(code, header):
+        url = 'http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/LHBGGSBRQ/GetLHBGGSBRQ?tkn=eastmoney&scode={}&dayNum=100&startDateTime=&endDateTime=&sortField=1&sortDirec=1&pageNum=1&pageSize=1000&cfg=ggsbrq&js='
+        vv = requests.get(url.format(code), headers=header)
+        # print(vv.status_code)
+        text = vv.text
+        # print(text)
+        lgt = []
+        if vv.status_code == 200 and text:
+            detail = json.loads(text).get("Data", "")
+            # print(detail)
+            # detail = ""
+            if detail:
+                li = detail[0].get("Data", "")
+                if li:
+                    for v in li:
+                        # print(v)
+                        # v = ""
+                        if v:
+                            notice_dat = v.split("|")
+                            if notice_dat:
+                                lgt.append(notice_dat[1])
+                                # print(notice_dat[1])
+        # print(lgt)
+        return lgt
+
+    #  龙虎榜son2
+    def per_dragon_tiger2(code, date_li, header):
+        url = 'http://datainterface3.eastmoney.com/EM_DataCenter_V3/api/LHBMMMX/GetLHBMXKZ?tkn=eastmoney&Code={}&dateTime={}&pageNum=1&pageSize=50&cfg=lhbmxkz&js='
+        lgt = []
+        if date_li and code:
+            for d in date_li:
+                vv = requests.get(url.format(code, d), headers=header)
+                # print(vv.status_code)
+                text = vv.text
+                # print(text)
+                if vv.status_code == 200 and text:
+                    detail = json.loads(text).get("Data", "")
+                    # print(detail)
+                    # detail = ""
+                    if detail:
+                        li = detail[0].get("Data", "")
+                        if li:
+                            # 13日期,14类型,排名2， 19交易营业， 21上榜次数，22胜率,11买入，17卖入占总成交比,卖出9，卖出占总成交比16，净额20
+                            lg = []
+                            flag = ""
+                            for v in li:
+                                # print(v)
+                                # v = ""
+                                if v:
+                                    n = v.split("|")
+                                    if n:
+                                        if n[12]:  # 13日期
+                                            n[12] = n[12].split(" ")[0]
+                                        # print(flag != n[13])
+                                        if flag != n[13]:  # 类型
+                                            flag = n[13]
+                                            lg.append([code, n[13], n[12], "", "", "", "", "", ""])
+                                            # print("55555", code)
+                                            lg.append(["", "营业部", "上榜次数", "胜率%", "买入", "买入占成交%", "卖出", "卖出占成交%", "余额"])
+                                        if n[10]:
+                                            n[10] = '{:.2f}亿'.format(float(n[10]) / 100000000)
+                                        if n[8]:
+                                            n[8] = '{:.2f}亿'.format(float(n[8]) / 100000000)
+                                        if n[19]:
+                                            n[19] = '{:.2f}亿'.format(float(n[19]) / 100000000)
+                                        lg.append([n[1], n[18], n[20], n[21], n[10], n[16], n[8], n[15], n[19]])
+                            # print(lg)
+                            lgt.append(lg)
+        # print(lgt)
+        return lgt
+
+    # 整理dragon数据
+    def arrangement_dragon():
+        stock_list = read_dragon_code("DRAGON_TIGER.blk")
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.67 Safari/537.36',
+        }
+        list_two = []
+        for vvv in stock_list[:-1]:
+            aaa = per_dragon_tiger(vvv[1:], headers)
+            # print(dra)
+            # aaa = [[['code', '涨幅偏离值达7%的证券', '2022/2/11', '', '', '', '', '', ''], ['', '营业部', '上榜次数', '胜率%', '买入', '买入占成交%', '卖出', '卖出占成交%', '余额'], ['1', '深股通专用', '153', '39.87', '0.71亿', '4.03', '0.35亿', '1.97', '0.36亿'], ['2', '机构专用', '1057', '40.68', '0.52亿', '2.96', '0.00亿', '0.00', '0.52亿'], ['3', '机构专用', '1057', '40.68', '0.47亿', '2.66', '0.00亿', '0.00', '0.47亿'], ['4', '华泰证券股份有限公司天津华昌道证券营业部', '3', '66.67', '0.46亿', '2.63', '0.00亿', '0.01', '0.46亿'], ['5', '机构专用', '1057', '40.68', '0.36亿', '2.06', '0.00亿', '0.00', '0.36亿'], ['1', '国泰君安证券股份有限公司宜春高安瑞州路证券营业部', '0', '', '0.19亿', '1.06', '0.44亿', '2.48', '-0.25亿'], ['2', '招商证券股份有限公司深圳水贝证券营业部', '1', '0.00', '0.02亿', '0.13', '0.41亿', '2.31', '-0.38亿'], ['3', '深股通专用', '153', '39.87', '0.71亿', '4.03', '0.35亿', '1.97', '0.36亿'], ['4', '机构专用', '1057', '40.68', '0.00亿', '0.00', '0.27亿', '1.55', '-0.27亿'], ['5', '华融证券股份有限公司武汉解放大道证券营业部', '0', '', '0.00亿', '0.00', '0.25亿', '1.40', '-0.25亿'], ['11', '', '1057', '40.68', '2.75亿', '15.53', '1.72亿', '9.71', '1.03亿'], ['code', '连续三个交易日内，涨幅偏离值累计达20%的证券', '2022/2/11', '', '', '', '', '', ''], ['', '营业部', '上榜次数', '胜率%', '买入', '买入占成交%', '卖出', '卖出占成交%', '余额'], ['1', '深股通专用', '153', '39.87', '1.27亿', '4.35', '1.45亿', '4.97', '-0.18亿'], ['2', '机构专用', '1057', '40.68', '1.21亿', '4.14', '0.00亿', '0.00', '1.21亿'], ['3', '机构专用', '1057', '40.68', '0.52亿', '1.79', '0.00亿', '0.00', '0.52亿'], ['4', '机构专用', '1057', '40.68', '0.47亿', '1.61', '0.00亿', '0.00', '0.47亿'], ['5', '华泰证券股份有限公司天津华昌道证券营业部', '3', '66.67', '0.47亿', '1.59', '0.00亿', '0.01', '0.46亿'], ['1', '深股通专用', '153', '39.87', '1.27亿', '4.35', '1.45亿', '4.97', '-0.18亿'], ['2', '国泰君安证券股份有限公司宜春高安瑞州路证券营业部', '0', '', '0.19亿', '0.65', '0.45亿', '1.53', '-0.26亿'], ['3', '招商证券股份有限公司深圳水贝证券营业部', '1', '0.00', '0.03亿', '0.09', '0.41亿', '1.40', '-0.38亿'], ['4', '机构专用', '1057', '40.68', '0.44亿', '1.51', '0.27亿', '0.94', '0.17亿'], ['5', '国盛证券有限责任公司上海徐汇区虹桥路证券营业部', '0', '', '0.02亿', '0.08', '0.26亿', '0.90', '-0.24亿'], ['11', '', '1057', '40.68', '4.62亿', '15.81', '2.85亿', '9.74', '1.77亿']]]
+            # aaa = [[['code', '连续三个交易日内，涨幅偏离值累计达20%的证券', '2022/2/11', '', '', '', '', '', ''], ['', '营业部', '上榜次数', '胜率%', '买入', '买入占成交%', '卖出', '卖出占成交%', '余额'], ['1', '深股通专用', '153', '39.87', '1.27亿', '4.35', '1.45亿', '4.97', '-0.18亿'], ['2', '机构专用', '1057', '40.68', '1.21亿', '4.14', '0.00亿', '0.00', '1.21亿'], ['3', '机构专用', '1057', '40.68', '0.52亿', '1.79', '0.00亿', '0.00', '0.52亿'], ['4', '机构专用', '1057', '40.68', '0.47亿', '1.61', '0.00亿', '0.00', '0.47亿'], ['5', '华泰证券股份有限公司天津华昌道证券营业部', '3', '66.67', '0.47亿', '1.59', '0.00亿', '0.01', '0.46亿'], ['1', '深股通专用', '153', '39.87', '1.27亿', '4.35', '1.45亿', '4.97', '-0.18亿'], ['2', '国泰君安证券股份有限公司宜春高安瑞州路证券营业部', '0', '', '0.19亿', '0.65', '0.45亿', '1.53', '-0.26亿'], ['3', '招商证券股份有限公司深圳水贝证券营业部', '1', '0.00', '0.03亿', '0.09', '0.41亿', '1.40', '-0.38亿'], ['4', '机构专用', '1057', '40.68', '0.44亿', '1.51', '0.27亿', '0.94', '0.17亿'], ['5', '国盛证券有限责任公司上海徐汇区虹桥路证券营业部', '0', '', '0.02亿', '0.08', '0.26亿', '0.90', '-0.24亿'], ['11', '', '1057', '40.68', '4.62亿', '15.81', '2.85亿', '9.74', '1.77亿'],
+            #         ['code', '涨幅偏离值达7%的证券', '2022/2/11', '', '', '', '', '', ''], ['', '营业部', '上榜次数', '胜率%', '买入', '买入占成交%', '卖出', '卖出占成交%', '余额'], ['1', '深股通专用', '153', '39.87', '0.71亿', '4.03', '0.35亿', '1.97', '0.36亿'], ['2', '机构专用', '1057', '40.68', '0.52亿', '2.96', '0.00亿', '0.00', '0.52亿'], ['3', '机构专用', '1057', '40.68', '0.47亿', '2.66', '0.00亿', '0.00', '0.47亿'], ['4', '华泰证券股份有限公司天津华昌道证券营业部', '3', '66.67', '0.46亿', '2.63', '0.00亿', '0.01', '0.46亿'], ['5', '机构专用', '1057', '40.68', '0.36亿', '2.06', '0.00亿', '0.00', '0.36亿'], ['1', '国泰君安证券股份有限公司宜春高安瑞州路证券营业部', '0', '', '0.19亿', '1.06', '0.44亿', '2.48', '-0.25亿'], ['2', '招商证券股份有限公司深圳水贝证券营业部', '1', '0.00', '0.02亿', '0.13', '0.41亿', '2.31', '-0.38亿'], ['3', '深股通专用', '153', '39.87', '0.71亿', '4.03', '0.35亿', '1.97', '0.36亿'], ['4', '机构专用', '1057', '40.68', '0.00亿', '0.00', '0.27亿', '1.55', '-0.27亿'], ['5', '华融证券股份有限公司武汉解放大道证券营业部', '0', '', '0.00亿', '0.00', '0.25亿', '1.40', '-0.25亿'], ['11', '', '1057', '40.68', '2.75亿', '15.53', '1.72亿', '9.71', '1.03亿']]]
+            aaa = aaa[0]
+            length = len(aaa)
+            lis = aaa[0][:3]
+            ss = json.dumps(aaa[2:13], ensure_ascii=False)
+            lis.append(ss)
+            list_two.append(lis)
+            # print(list_two)
+            if length > 13:
+                if "连续三" in aaa[0][1]:
+                    lis2 = aaa[13][:3]
+                    sss2 = json.dumps(aaa[15:26], ensure_ascii=False)
+                    lis2.append(sss2)
+                    list_two.append(lis2)
+                    # print(len(list_two))
+                    # print(list_two)
+                else:
+                    a13 = aaa[13:]
+                    for i, v in enumerate(a13):
+                        # print(v)
+                        if "连续三" in v[1]:
+                            lis3 = v[:3]
+                            # print(lis3)
+                            sss3 = json.dumps(a13[i+2:i+13], ensure_ascii=False)
+                            lis3.append(sss3)
+                            list_two.append(lis3)
+                            break
+            # print(list_two)
+        if os.path.isfile(mysetting.DATA_TABLE_DB):
+            with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:
+                cu = conn.cursor()
+                for t in list_two:
+                    cu.execute("INSERT INTO fuzzy_dragon VALUES(?,?,?,?)", t)
+                cu.close()
+
+    arrangement_dragon()
+

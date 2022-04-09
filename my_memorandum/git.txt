@@ -1,0 +1,43 @@
+﻿git add -A .来一次添加所有改变的文件
+(1),git add . 和 git add * 区别
+    git add . 会把本地所有untrack的文件都加入暂存区，并且会根据.gitignore做过滤，
+    git add * 会忽略.gitignore把任何文件都加入
+    git status //查看仓库当前的状态.(不要打开pycharm)
+
+(2),git commit -m "wrote a readme file".
+
+(3),切换分支：git checkout <name>.如果是多人开发的话 需要把远程master上的代码pull下来 git pull origin master
+    首先切换到master分支上git  checkout master
+
+(4),然后我们把dev分支的代码合并到master上 git  merge dev
+
+(5),git push origin master
+
+: 时可以空格键或回车键，q是退出,上面的界面退出     输入命令 ：wq    即可
+
+加了-a -m "uu"，在 commit 的时候，能省一步 git add ，但也只是对修改和删除文件有效， 新文件还是要 git add，不然就是
+untracked 状态
+
+git checkout HashMap.c --ours 表示冲突的地方采用A分支上的修改,丢弃B分支上的修改.
+git checkout HashMap.c --theirs 表示冲突的地方采用B分支上的修改,丢弃A分支上的修改.
+解决完冲突后,就可以像往常一样 git add git commit了.
+
+查看所有分支
+git branch -a
+
+删除远程分支Chapater6
+git push origin --delete Chapater6
+
+删除本地分支 Chapater6
+git branch -d  Chapater6
+
+查看分支：git branch
+创建分支：git branch <name>
+git fetch origin master:temp
+这句命令的意思是从远程的origin master分支现在到repository中的 temp分支，即这种方式为在本地新建一个temp分支保存远程的更新
+
+.gitignore只能忽略原来没有被跟踪的文件，因此跟踪过的文件是无法被忽略的。因此在网页上可以看到target等目录的存在。
+解决方法就是先把本地缓存删除（改变成未track状态），然后再提交
+
+如果本地版本与远程版本有差异，但又要强制推送可以使用 --force 参数：
+git push --force origin master

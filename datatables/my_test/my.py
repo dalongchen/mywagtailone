@@ -29,6 +29,10 @@ if __name__ == "__main__":
     # 读dragon_tiger_all_inst_lgt2龙虎榜日期和dragon_tiger_all_inst_lgt2k日k线,把k数据插入dragon_tiger_all_inst_lgt2k_0 or 1,2
     if ww == "2":
         main_test.dragon_tiger_date_mark_0(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db")
+    if ww == "3":
+        from mywagtailone.datatables import views
+        pp = views.sina_real_time("600000")
+        print(pp)
     # t = main_test.test_tiger_code(r"D:\ana\envs\py36\mywagtailone\datatables\datatable.db", "2021-07-01")
     # t = ["sz.001914"]
     # par = main_test.test_get_k(t, "2019-09-20", "")  # 传入code list，获取k线数据

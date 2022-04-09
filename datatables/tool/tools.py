@@ -6,7 +6,9 @@ import datetime
 import re
 import pandas as pd
 from .. import views
-import os
+# import os
+# from . import mysetting
+# import sqlite3
 spider = BaiduSpider()
 
 
@@ -61,30 +63,37 @@ def time_increase(begin_time, days):
 
 
 # 输入代码和时间段获取股票k线数据. adjustflag(1：后复权， 2：前复权，3：不复权）
-def history_k_data(code="sh.000001", start_date='2021-07-01', end_date='2021-07-31', frequency="d", adjustflag="1"):
+def history_k_data(code="sh.000001", start_date='2021-07-01', end_date='2021-07-31', frequency="d", adjustflag="2", col="all"):
     import baostock as bs
     lg = bs.login()
     if not code.startswith("sh.") or not code.startswith("sz."):
-        if code.startswith("SH.") or not code.startswith("SZ."):
+        # print("ghjppp", code)
+        if code.startswith("SH.") or code.startswith("SZ."):
             code = code.lower()
         else:
+            # print("ghjppkkkkkkp", code)
             code = views.add_sh(code, big="baostock")
     # 显示登陆返回信息
-    print('login respond error_code:' + lg.error_code)
-    print('login respond  error_msg:' + lg.error_msg)
+    # print('login respond error_code:' + lg.error_code)
+    # print('login respond  error_msg:' + lg.error_msg)
     # “分钟线”参数与“日线”参数不同。“分钟线”不包含指数。
     # 分钟线指标：date,time,code,open,high,low,close,volume,amount,adjustflag
     # 周月线指标：date,code,open,high,low,close,volume,amount,adjustflag,turn,pctChg
-    rs = bs.query_history_k_data_plus(code,
-                                      "date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,pctChg,isST",
-                                      start_date, end_date, frequency, adjustflag)
-    print('query_history_k_data_plus respond error_code:' + rs.error_code)
-    print('query_history_k_data_plus respond  error_msg:' + rs.error_msg)
+    if col == "all":
+        str_col = "date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,pctChg,isST"
+    if col == "only_up_rate":
+        str_col = "date,pctChg"
+    # print("ghj", code)
+    rs = bs.query_history_k_data_plus(code, str_col, start_date, end_date, frequency, adjustflag)
+    # print('query_history_k_data_plus respond error_code:' + rs.error_code)
+    # print('query_history_k_data_plus respond  error_msg:' + rs.error_msg)
     data_list = []
     while (rs.error_code == '0') & rs.next():
         # 获取一条记录，将记录合并在一起
         data_list.append(rs.get_row_data())
-    result = pd.DataFrame(data_list, columns=rs.fields)
+    bs.logout()
+    if col == "all":
+        result = pd.DataFrame(data_list, columns=rs.fields)
     # adjustflag	指数没有复权?	不复权、前复权、后复权
     # turn	换手率	精度：小数点后6位；单位：%
     # tradestatus	交易状态	1：正常交易 0：停牌
@@ -94,9 +103,57 @@ def history_k_data(code="sh.000001", start_date='2021-07-01', end_date='2021-07-
     # pcfNcfTTM	滚动市现率	精度：小数点后6位
     # pbMRQ	市净率	精度：小数点后6位
     # isST	是否ST	1是，0否
-    result.to_csv("D:\\history_A_stock_k_data.csv", index=False)
-    # print(result)
-    bs.logout()
+        result.to_csv("D:\\history_A_stock_k_data.csv", index=False)
+    if col == "only_up_rate":
+        # print(data_list[:2])
+        return data_list
+
+
+# for循环专用，输入代码和时间段获取股票k线数据. adjustflag(1：后复权， 2：前复权，3：不复权）
+def for_history_k_data(code="sh.000001", start_date='2021-07-01', end_date='2021-07-31', frequency="d",
+                       adjustflag="2", col="all", bs=""):
+
+    if not code.startswith("sh.") or not code.startswith("sz."):
+        # print("ghjppp", code)
+        if code.startswith("SH.") or code.startswith("SZ."):
+            code = code.lower()
+        else:
+            # print("ghjppkkkkkkp", code)
+            code = views.add_sh(code, big="baostock")
+    # 显示登陆返回信息
+    # print('login respond error_code:' + lg.error_code)
+    # print('login respond  error_msg:' + lg.error_msg)
+    # “分钟线”参数与“日线”参数不同。“分钟线”不包含指数。
+    # 分钟线指标：date,time,code,open,high,low,close,volume,amount,adjustflag
+    # 周月线指标：date,code,open,high,low,close,volume,amount,adjustflag,turn,pctChg
+    if col == "all":
+        str_col = "date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,pctChg,isST"
+    if col == "only_up_rate":
+        str_col = "date,pctChg"
+    # print("ghj", code)
+    rs = bs.query_history_k_data_plus(code, str_col, start_date, end_date, frequency, adjustflag)
+    # print('query_history_k_data_plus respond error_code:' + rs.error_code)
+    # print('query_history_k_data_plus respond  error_msg:' + rs.error_msg)
+    data_list = []
+    while (rs.error_code == '0') & rs.next():
+        # 获取一条记录，将记录合并在一起
+        data_list.append(rs.get_row_data())
+
+    if col == "all":
+        result = pd.DataFrame(data_list, columns=rs.fields)
+        # adjustflag	指数没有复权?	不复权、前复权、后复权
+        # turn	换手率	精度：小数点后6位；单位：%
+        # tradestatus	交易状态	1：正常交易 0：停牌
+        # pctChg	涨跌幅（百分比）	精度：小数点后6位
+        # peTTM	滚动市盈率	精度：小数点后6位
+        # psTTM	滚动市销率	精度：小数点后6位
+        # pcfNcfTTM	滚动市现率	精度：小数点后6位
+        # pbMRQ	市净率	精度：小数点后6位
+        # isST	是否ST	1是，0否
+        result.to_csv("D:\\history_A_stock_k_data.csv", index=False)
+    if col == "only_up_rate":
+        # print(data_list[:2])
+        return data_list
 
 
 # 压缩
@@ -316,6 +373,22 @@ def add_sh(code, big=""):
         else:
             print(code)
     return code
+
+
+#  已知任意两个日期，计算出两个日期之间相隔的天数。
+def interval_days(day1, day2):
+    """通过 time.strptime() 方法，把日期时间字符串解析为时间元组
+通过 time.mktime() 方法，把时间元祖转换为时间戳
+根据2个日期对应的时间戳，得到2个日期相差的秒数，进而计算出间隔天数"""
+    time_array1 = time.strptime(day1, "%Y-%m-%d")
+    timestamp_day1 = int(time.mktime(time_array1))
+    # print(day2)
+    time_array2 = time.strptime(day2, "%Y-%m-%d")
+    timestamp_day2 = int(time.mktime(time_array2))
+    result = (timestamp_day2 - timestamp_day1) // 60 // 60 // 24
+    return result
+
+
 
 
 

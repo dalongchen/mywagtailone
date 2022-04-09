@@ -77,6 +77,11 @@
               {{backup}}
             </el-button>
         </el-col>
+        <el-col :span="3">
+            <el-button round @click="choice_stock('kzz')" :disabled="f">
+              {{kzz}}
+            </el-button>
+        </el-col>
       </el-row>
       <el-row  class="row-bg" >
         <el-col :span="3">
@@ -134,6 +139,7 @@ export default defineComponent({
       pre_paid:"5:30后预买",
       ths_lgt02:"陆股通大于0.2",
       backup:"备份",
+      kzz:"east可转债",
       good_notice:"公告利好",
     };
   },
@@ -232,6 +238,8 @@ export default defineComponent({
         this.pre_paid = "工作中约60秒";
       }else if (d == "backup") {
         this.backup = "工作中约60秒";
+      }else if (d == "kzz") {
+        this.kzz = "工作中约60秒";
       }
       // console.log(d);
       if (this.msgSon != ""){
@@ -283,6 +291,8 @@ export default defineComponent({
           this.pre_paid = r;
         }else if (d == "backup") {
           this.backup = r;
+        }else if (d == "kzz") {
+          this.kzz = r;
         }
         this.f = false;
       }).catch(error => {
@@ -316,6 +326,8 @@ export default defineComponent({
           this.pre_paid = rr;
         }else if (d == "backup") {
           this.backup = rr;
+        }else if (d == "kzz") {
+          this.kzz = rr;
         }
         this.f = false;
         this.ff = false;

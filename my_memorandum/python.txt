@@ -1,0 +1,6 @@
+用正则模糊查找字符串，并仅化出字符串中数字
+search_span = re.search(r'(含最.*利息)', redeem_clause).span()  # （.*表示多个任意字符）（.表示任意字符）
+print("dr2324", search_span[0])
+if search_span:
+    yy = [float(s) for s in re.findall(r'-?\d+\.?\d*', redeem_clause[search_span[0]-7: search_span[0]])]  # 字符串中取浮点数，int和负数
+    y = yy[0]

@@ -1,3 +1,0 @@
-pytest exampletest.py -s输出打印信息
-pytest -k history test_py.py -s
-pytest -m tested -s

@@ -38,8 +38,10 @@ if __name__ == "__main__":
             un_da.unsupervised_lesson06_activity13()
     elif robot == "fuzzy_decision":
         from mywagtailone.datatables.my_test import fuzzy_decision as fuzzy
-        rob = "multiple_fuzzy_decision"
+        rob = "fuzzy_dragon_tiger2"
         if rob == "fuzzy_decision":
             fuzzy.fuzzy_decision()
         elif rob == "multiple_fuzzy_decision":
             fuzzy.multiple_fuzzy_decision()
+        elif rob == "fuzzy_dragon_tiger":
+            fuzzy.fuzzy_dragon_tiger()

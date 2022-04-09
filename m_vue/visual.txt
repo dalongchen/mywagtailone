@@ -2,3 +2,4 @@
 Ctrl + X是快速删除一行
 ctrl+k清理终端
 ctrl+/是注释
+ctrl+~开关终端
