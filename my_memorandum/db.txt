@@ -1,3 +1,5 @@
+模糊查询，like instr
+select redeem_clause FROM kzz_80_120 WHERE INSTR(redeem_clause, '含最') <=0
 update dragon_tiger_k_copy set code=substr(code, 4,12)
 update dragon_tiger_k set open = round(open,2)
 
