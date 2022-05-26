@@ -1,6 +1,7 @@
 from scipy import optimize as op
 import numpy as np
 
+"""Scipy 只能求解线性规划，不能求解整数规划"""
 
 # c指的应该是要求最大值的函数的系数数组，A_ub是应该是不等式未知量的系数矩阵，原来这不等式指的是<=的不等式，
 # 那如果是>=呢，乘个负号就行了。A_eq就是其中等式的未知量系数矩阵了。B_ub就是不等式的右边了，B_eq就是等式右边了。
@@ -19,21 +20,21 @@ import numpy as np
 # .success是一个布尔值，显示是否已找到最佳解决方案。
 # .x 是一个保存决策变量最优值的 NumPy 数组。
 def linear_test():
-    c = np.array([2, 3, -5])
-    A_ub = np.array([[-2, 5, -1], [1, 3, 1]])
+    c = np.array([2, 3, -5])  # c指要求最大值的函数的系数数组,-c为最小
+    A_ub = np.array([[-2, 5, -1], [1, 3, 1]])  # 不等式指的是<=的不等式,A_ub是不等式未知量的系数矩阵
     B_ub = np.array([-10, 12])
     A_eq = np.array([[1, 1, 1]])
     B_eq = np.array([7])
-    x1 = (0, 7)
+    x1 = (0, 7)  # 变量范围
     x2 = (0, 7)
     x3 = (0, 7)
     res = op.linprog(-c, A_ub, B_ub, A_eq, B_eq, bounds=(x1, x2, x3))
     print(res)
 
-
 # linear_test()
 
 
+# 运筹学书第一例
 def linear_test_book():
     c = np.array([2, 3])
     A_ub = np.array([[1, 2], [4, 0], [0, 4]])
@@ -48,7 +49,7 @@ def linear_test_book():
 
 # linear_test_book()
 
-
+# 运筹学书第2例，求用料最少
 def linear_test_book_material():
     c = np.array([0, 0.1, 0.2, 0.3, 0.8])
     # A_ub = np.array([[1, 2], [4, 0], [0, 4]])
@@ -62,7 +63,6 @@ def linear_test_book_material():
     x5 = (0, 70)
     res = op.linprog(c, A_eq, B_eq, bounds=(x1, x2, x3, x4, x5))
     print(res)
-
 
 # linear_test_book_material()
 
@@ -79,4 +79,54 @@ def linear_teacher():
     print(res)
 
 
-linear_teacher()
+# linear_teacher()
+
+
+# 快递用人最优2-12例
+def linear_book_2_12_express():
+    c = np.array([150, 150, 150, 80, 80, 80])  # c指要求最大值的函数的系数数组,-c为最小
+    A_ub = np.array([
+         [500, 0, 0, 0, 0, 0],
+         [1000, 500, 0, 0, 0, 0],
+         [1500, 1000, 500, 0, 0, 0],
+         [2000, 1500, 1000, 500, 0, 0],
+         [2500, 2000, 1500, 1000, 500, 0],
+         [3000, 2500, 2000, 1500, 1000, 500],
+
+         [3500, 3000, 2500, 2000, 1500, 1000],
+         [4000, 3500, 3000, 2500, 2000, 1500],
+         [4000, 4000, 3500, 2500, 2500, 2000],
+         [1, 1, 1, 1, 1, 1],
+
+         [-4000, -4000, -4000, -2500, -2500, -2500],
+         [-2000, -1500, -1000, -500, 0, 0],
+         [-3500, -3000, -2500, -2000, -1500, -1000]
+         ])  # 不等式指的是<=的不等式,A_ub是不等式未知量的系数矩阵
+    B_ub = np.array([
+        5000,
+        9000,
+        12000,
+        16000,
+        18500,
+        21500,
+        25500,
+        30000,
+        33500,
+        11,
+
+        -36000,
+        -12000,
+        -21500,
+         ])
+    # A_eq = np.array([[1, 1, 1]])
+    # B_eq = np.array([7])
+    x1 = (0, 11)  # 变量范围
+    x2 = (0, 11)
+    x3 = (0, 11)
+    x4 = (0, 11)
+    x5 = (0, 11)
+    x6 = (0, 11)
+    res = op.linprog(-c, A_ub, B_ub, bounds=(x1, x2, x3, x4, x5, x6))
+    print(res)
+
+linear_book_2_12_express()

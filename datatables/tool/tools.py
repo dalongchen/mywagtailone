@@ -389,6 +389,23 @@ def interval_days(day1, day2):
     return result
 
 
+# pandas自动建表并读入数据db_path：数据库路径, path：文件路径, table_name表名
+def pandas_create_table(db_path, path, table_name):
+    import sqlite3
+    df = pd.read_excel(path, engine="openpyxl")
+    # data = df.values
+    # print("获取到所有的值:\n{}".format(tuple(df.keys())))
+    # print("获取到所有的值:\n{}".format(data))
+    data_frame = pd.DataFrame(df)
+    with sqlite3.connect(db_path) as conn:
+        cur = conn.cursor()
+        # aa = df.keys()
+        # aa = tuple(df.keys())
+        """如果不存在就创建表"""
+        create_sql = """CREATE TABLE IF NOT EXISTS {}{}""".format(table_name, tuple(df.keys()))
+        cur.execute(create_sql)
+        data_frame.to_sql(table_name, con=conn, if_exists='replace', index=False)
+        cur.close()
 
 
 
