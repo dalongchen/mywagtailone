@@ -176,8 +176,6 @@ def east_money_lgt(request):
 
     # 东财 可转债
     if s == "kzz":
-        # print(s)
-        # if d_t:
         return JsonResponse({'number': east_kzz()})
         # return JsonResponse({'number': '缺日期'})
 

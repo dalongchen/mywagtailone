@@ -684,7 +684,7 @@ def kzz_stock_standard_deviation():
         cur.close()
 
 
-# 计算可转债对应stock期权价值
+# bs计算可转债对应stock期权价值
 def kzz_stock_option_value():
     from scipy import stats
     with sqlite3.connect(mysetting.DATA_TABLE_DB) as conn:

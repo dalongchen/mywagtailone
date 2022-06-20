@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 import math
 
 
@@ -183,7 +184,6 @@ class AmericanOptionsLSMC(object):
     def gmb_mcs_amer(self, option='call'):
         import math
         from time import time
-        # import matplotlib.pyplot as plt
         strike = self.strike
         S0 = self.S0
         r = self.r
@@ -613,11 +613,627 @@ class AmericanOptionsLSMC2(AmericanOptionsLSMC):
                     arr.append(ii[0])
 
 
-american2 = AmericanOptionsLSMC2(100., 120., 1., 6*245, 0.03, 0.35, 10)
+# american2 = AmericanOptionsLSMC2(100., 120., 1., 6*245, 0.03, 0.35, 10)
 # american2 = AmericanOptionsLSMC2(100., 120., 1., 5, 0.03, 0.35, 26)
+# american2.gmb_mcs_amer()
 # american2.get_price()
-american2.gmb_mcs_amer()
 """call是看涨期权，put是看跌期权，最简单的理解下，未来股价看涨，你应该买call，未来股价看跌你应该买put。"""
 # gmb_mcs_amer(105, option='call')  # 1.4620120629034186
 # gmb_mcs_amer(110, option='put')  # 9.918961211536654
+
+
+# 获取可转债股价
+class KzzStockPrice(object):
+    def __init__(self):
+        pass
+
+    # 输入代码和时间段获取股票k线数据. adjustflag(1：后复权， 2：前复权，3：不复权）
+    def history_k_data(self, code="sh.000001", start_date='2021-07-25', end_date='2021-07-31', frequency="d",
+                       adjustflag="2", col="all"):
+        import baostock as bs
+        lg = bs.login()
+        if (not code.startswith("sh.")) and (not code.startswith("sz.")):
+            # print("ghjppp", code)
+            if code.startswith("SH.") or code.startswith("SZ."):
+                code = code.lower()
+            else:
+                # print("ghjppkkkkkkp", code)
+                code = self.add_sh(code, big="baostock")
+        # 显示登陆返回信息
+        # print('login respond error_code:' + lg.error_code)
+        # print('login respond  error_msg:' + lg.error_msg)
+        # “分钟线”参数与“日线”参数不同。“分钟线”不包含指数。
+        # 分钟线指标：date,time,code,open,high,low,close,volume,amount,adjustflag
+        # 周月线指标：date,code,open,high,low,close,volume,amount,adjustflag,turn,pctChg
+        if col == "all":
+            str_col = "date,code,open,high,low,close,preclose,volume,amount,adjustflag,turn,tradestatus,pctChg,isST"
+        if col == "only_up_rate":
+            str_col = "date,close,pctChg"
+        # print("ghj", code)
+        rs = bs.query_history_k_data_plus(code, str_col, start_date, end_date, frequency, adjustflag)
+        # print('query_history_k_data_plus respond error_code:' + rs.error_code)
+        # print('query_history_k_data_plus respond  error_msg:' + rs.error_msg)
+        data_list = []
+        while (rs.error_code == '0') & rs.next():
+            # 获取一条记录，将记录合并在一起
+            data_list.append(rs.get_row_data())
+        bs.logout()
+        if col == "all":
+            result = pd.DataFrame(data_list, columns=rs.fields)
+            # adjustflag	指数没有复权?	不复权、前复权、后复权
+            # turn	换手率	精度：小数点后6位；单位：%
+            # tradestatus	交易状态	1：正常交易 0：停牌
+            # pctChg	涨跌幅（百分比）	精度：小数点后6位
+            # peTTM	滚动市盈率	精度：小数点后6位
+            # psTTM	滚动市销率	精度：小数点后6位
+            # pcfNcfTTM	滚动市现率	精度：小数点后6位
+            # pbMRQ	市净率	精度：小数点后6位
+            # isST	是否ST	1是，0否
+            # result.to_csv("D:\\history_A_stock_k_data.csv", index=False)
+        if col == "only_up_rate":
+            import sqlite3
+            db_path = r"D:\myzq\axzq\T0002\stock_load\thesis\kzz\monte.db"  # 数据库路径
+            result = pd.DataFrame(data_list, columns=rs.fields, dtype='float').round(3)
+            # 对数收益率 = log(收盘价/前一个收盘价)
+            result['log_'] = (np.log(result['close'] / result['close'].shift(periods=1, axis=0))*100).round(3)
+            # print(result[1:])
+            with sqlite3.connect(db_path) as conn:
+                result[1:].to_sql(code, con=conn, if_exists='replace', index=False)
+            # print(data_list[-5:])
+            # return data_list
+
+    # 静态函数和该类没有直接的交互，只是寄存在了该类的命名空间中
+    @staticmethod
+    def add_sh(code, big=""):  # big="baostock"加(sh. or sz.)code加(sh or sz) or (SZ or SH)
+        if big == "":
+            if code.startswith("0") or code.startswith("3") or code.startswith("2"):
+                code = "sz" + code
+            elif code.startswith("5") or code.startswith("6") or code.startswith("9"):
+                code = "sh" + code
+            else:
+                print("err1", code)
+        elif big == "baostock":
+            if code.startswith("0") or code.startswith("3") or code.startswith("2"):
+                code = "sz." + code
+            elif code.startswith("5") or code.startswith("6") or code.startswith("9"):
+                code = "sh." + code
+            else:
+                print("err2", code)
+        else:
+            if code.startswith("0") or code.startswith("3") or code.startswith("2"):
+                code = "SZ" + code
+            elif code.startswith("5") or code.startswith("6") or code.startswith("9"):
+                code = "SH" + code
+            else:
+                print("err3", code)
+        return code
+
+# kzs = KzzStockPrice()
+# kzs.history_k_data(start_date='2021-05-26', end_date='2022-05-27', col="only_up_rate")  # 取上证综指
+# kzs.history_k_data(code="sh.603233", start_date='2021-05-26', end_date='2022-05-27', col="only_up_rate")
+# kzs.history_k_data(code="sz.002624", start_date='2021-05-25', end_date='2022-05-27', col="only_up_rate")
+
+
+# 波动率
+class KzzStockArch(object):
+    def __init__(self):
+        pass
+
+    # 画热力图
+    @staticmethod
+    def thermodynamicOrder(df, ar=4, ma=1):
+        import itertools
+        from statsmodels.tsa.arima.model import ARIMA
+        import seaborn as sns
+        results_aic = pd.DataFrame(index=['AR{}'.format(i) for i in range(0, ar + 1)],
+                                   columns=['MA{}'.format(i) for i in range(0, ma + 1)])
+        # print(results_aic)
+        """itertools.product(*iterables[, repeat]).以元组的形式，根据输入的可遍历对象生成笛卡尔积，与嵌套的for循环类似。
+        repeat指定重复生成序列的次数。
+        a = (1, 2, 3)
+        b = ('A', 'B', 'C')
+        c = itertools.product(a,b)
+        for elem in c:
+            print elem
+
+        (1, 'A')
+        (1, 'B')
+        (1, 'C')
+        (2, 'A')
+        (2, 'B')
+        (2, 'C')
+        (3, 'A')
+        (3, 'B')
+        (3, 'C')
+        """
+        for p, q in itertools.product(range(0, ar + 1), range(0, ma + 1)):
+            # print(p, q)
+            if p == 0 and q == 0:
+                results_aic.loc['AR{}'.format(p), 'MA{}'.format(q)] = np.nan
+                # print(results_aic)
+                continue
+            try:
+                # results = arima_model.ARMA(df, (p, q)).fit()
+                results = ARIMA(df, order=(p, 0, q)).fit()
+                # 返回不同pq下的model的BIC值
+                results_aic.loc['AR{}'.format(p), 'MA{}'.format(q)] = results.aic
+                print(results.aic)
+            except:
+                continue
+        results_aic = results_aic[results_aic.columns].astype(float)
+        fig, ax = plt.subplots(figsize=(10, 8))
+        ax = sns.heatmap(results_aic,
+                         # mask=results_aic.isnull(),
+                         ax=ax,
+                         annot=True,  # 将数字显示在热力图上
+                         fmt='.2f',
+                         )
+        ax.set_title('AIC')
+        plt.show()
+
+    # 画涨幅中位数图和正太分布对比
+    @staticmethod
+    def quantile_plot(x, **kwargs):
+        import scipy.stats as stats
+        """红色线条表示正态分布，蓝色线条表示样本数据，蓝色越接近红色参考线，说明越符合预期分布（这是是正态分布）
+q-q 图是通过比较数据和正态分布的分位数是否相等来判断数据是不是符合正态分布
+scipy.stats.probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False)
+x：array_like样本/响应数据
+sparams：tuple, 可选参数
+Distribution-specific形状参数(形状参数加上位置和比例)。
+dist：分发或分发函数名称。对于正常概率图，默认值为‘norm’。
+fit：如果为True(默认值)，则将least-squares回归(best-fit)行拟合到样本数据。
+plot：如果给定，则绘制分位数。如果给出并且scipy.stats.fit为真，也绘制最小二乘拟合。
+"""
+        res = stats.probplot(x, fit=True, plot=plt)
+        _slope, _int, _r = res[-1]
+        ax = plt.gca()
+        ax.get_lines()[0].set_marker('s')
+        ax.get_lines()[0].set_markerfacecolor('r')
+        ax.get_lines()[0].set_markersize(13.0)
+        ax.get_children()[-2].set_fontsize(22.)
+        txkw = dict(size=14, fontweight='demi', color='r')
+        """相关性=R-squared误差取值范围为0到1，这个值越接近1说明模型的拟合度越好。"""
+        r2_tx = "r^2 = {:.2%}\nslope = {:.4f}".format(_r, _slope)
+        ymin, ymax = ax.get_ylim()
+        xmin, xmax = ax.get_xlim()
+        ax.text(0.5 * xmax, .8 * ymin, r2_tx, **txkw)
+        plt.show()
+        # plt.savefig('figname.png')
+        return
+
+    def adf_test(self, tab):
+        import sqlite3
+        db_path = r"D:\myzq\axzq\T0002\stock_load\thesis\kzz\monte.db"  # 数据库路径
+        with sqlite3.connect(db_path) as conn:
+            # data = pd.read_sql("select close from 'sh.603233'", conn)
+            # data = pd.read_sql("select pctChg from 'sh.603233'", conn)
+            data = pd.read_sql(r"select log_ from '{}' ORDER BY date DESC".format(tab), conn)
+            # print(data.head())
+            dd = ""  # 计算年华对数和普通波动率
+            if dd == "variance":
+                print("方差：", data.var())
+                print("标准差: ", data.std())
+                print(data.shape[0])
+                print(data.shape[0]**0.5)
+                print("年华波动率: ", data.std()*(data.shape[0]**0.5))
+
+            dd = ""  #
+            if dd == "garch":
+                import arch
+                """赤池信息准则（Akaike Information Criterion，AIC）和贝叶斯信息准则（Bayesian Information Criterion，BIC）
+                选择最佳模型时，通常选择AIC最小的模型.const coef:10.2779 y截距，即b值。std err，反映系数的准确度，越低，准确度越高。
+                P>|t|:p值，判断回归参数是否有统计学意义.
+                Confidence Interval：置信区间，表示我们的系数可能范围（可能性为 95%）
+                在模型中，增加多个变量，即使事实上无关的变量，也会小幅度条R平方的值，当时其是无意义，所有我们调整了下，降低R平方的值。
+                简单地说就是，用r square的时候，不断添加变量能让模型的效果提升，而这种提升是虚假的。利用adjusted r square，
+                能对添加的非显著变量给出惩罚，也就是说随意添加一个变量不一定能让模型拟合度上升
+                标准误 （Standard Error, SE）"""
+                # am = arch.arch_model(data, vol='GARCH')
+                # am = arch.arch_model(data, mean='AR', vol='GARCH', dist='gaussian',)
+                # am = arch.arch_model(data, p=1, q=1, o=0, power=2.0, vol='Garch', dist='StudentsT')
+                # am = arch.arch_model(data, vol='Garch', dist='StudentsT')
+                # am = am.fit()
+                # am = am.fit(update_freq=0, disp='off')
+                # print(am.summary())
+                # pre = tempmodel.forecast(horizon=pst, start=lag - 1, method='simulation').mean.iloc[lag - 1]
+                # print(pre)
+                # train = data.diff(1).dropna()
+                # -0.056757
+                # data = data['log_']-data['log_'].mean()
+                # print("kk", )
+                train = data[:-10]
+                test = data[-10:]
+                am = arch.arch_model(train, mean='AR', lags=1, vol='ARCH',)
+                # am = arch.arch_model(train, mean='AR', lags=1, vol='GARCH',)
+                res = am.fit()
+                print(res.summary())
+
+            dd = "ljungbox"  # ljungbox检验
+            if dd == "ljungbox":
+                from statsmodels.stats.diagnostic import acorr_ljungbox
+                """
+                acorr_ljungbox(x, lags=None, boxpierce=False, model_df=0, period=None,return_df=None, auto_lag=False)
+                x: 观测序列
+                lags为延迟阶数，整数/列表，如果是一个整数，返回延迟1阶～延迟该指定整数阶的检验结果；如果是一个列表，
+                仅返回列表中指定的延迟阶数的检验结果；如果为None，默认值为min((nobs // 2 - 2), 40)，
+                nobs就是观测序列中样本个数。
+                boxpierce: 布尔类型，如果为True，不仅返回QLB统计量检验结果还返回QBP统计量检验结果；默认为False，
+                仅返回QLB统计量检验结果。
+                model_df: degree of freedom，即模型的自由度，默认值为0，一般检验单个序列默认值即可；
+                当检验模型拟合后的残差序列时，残差序列中观测值的个数不能表示自由度
+                （个人理解就是里面随机变量的个数，比如方差中无偏估计的因为已知均值，结合前n-1项就能算出第n项，
+                故自由度为样本个数减1）
+                如ARMA拟合后的残差检验时模型自由度为p+q，计算完Q统计量查找P值时，卡方分布的自由度应为lags-p-q，
+                此时指定model_df=p+q。
+                period: 季节性序列周期大小，帮助确定最大延迟阶数
+                return_df: 是否以DataFrame格式返回结果，默认False以元组方式返回结果
+                auto_lag: 根据自相关性自动计算最佳最大延迟阶数，指定时报错了，pass
+
+                返回值：
+                lbvalue: QLB检验统计量（Ljung-Box检验）
+                pvalue: QLB检验统计量下对应的P值（Ljung-Box检验）
+                bpvalue: QBP检验统计量，boxpierce为False时不反回（Box-Pierce检验）
+                bppvalue: QBP检验统计量下对应的P值，boxpierce为False时不反回（Box-Pierce检验）
+
+                第1行为Ljung-Box统计量,第2行为p值
+                如果p<0.05，拒绝原假设，说明原始序列存在相关性
+                如果p>=0.05，接收原假设，说明原始序列独立，纯随机
+                若是白噪声数据，则该数据没有价值提取，每一个P值都小于0.05或等于0，说明该数据不是白噪声数据，数据有价值，
+                可以继续分析。反之如果大于0.05，则说明是白噪声序列，是纯随机性序列。
+                """
+                # ljungbox_result = acorr_ljungbox(data, lags=20)  # 返回统计量和p值，lags为检验的延迟数
+                # ljungbox_result = acorr_ljungbox(data,  lags=[1, 2, 3, 6, 12, 24], return_df=True)
+                ljungbox_result = acorr_ljungbox(data['log_'], return_df=True, boxpierce=True,)  # 返回统计量和p值，lags为检验的延迟数
+                # ljungbox_result = acorr_ljungbox(data, return_df=True, auto_lag=True)  # 返回统计量和p值，lags为检验的延迟数
+                print(ljungbox_result)
+
+                # import statsmodels.api as sm
+                # # 举一个非白噪声例子结束
+                # data = sm.datasets.sunspots.load_pandas().data
+                # data = data.set_index('YEAR')
+                # res = acorr_ljungbox(data.SUNACTIVITY, lags=[6, 12, 24], boxpierce=True, return_df=True)
+                # print(res)
+                # data.plot(figsize=(12, 4))
+                # plt.show()
+
+            dd = ""  # arima
+            if dd == "arima":
+                from statsmodels.tsa.arima.model import ARIMA
+                """三个阶参数 (p,d,q) 指定：
+                AR(p)：说明数据的增长/下降模式
+                I (d): 增长/下降的变化率被考虑在内
+                MA (q)：考虑时间点之间的噪声 """
+                model = ARIMA(data, order=(2, 0, 0)).fit()
+                print(model.summary())    # 生成一份模型报告返回预测结果， 标准误差， 和置信区间
+                # print(model.forecast(5))   # 为未来5天进行预测，
+
+            dd = ""  # arima参数
+            if dd == "arima_p_q":
+                from pmdarima.arima import auto_arima
+                """
+                auto_arima可以帮助我们自动确定 A R I M A ( p , d , q ) ( P , D , Q ) m
+                data_low：训练集
+                start_p：p参数迭代的初始值
+                max_p：p参数迭代的最大值
+                seasonal：季节性
+                trace：平滑
+                stepwise：显示运行过程,stepwise参数，默认值就是True，表示用stepwise algorithm来选择最佳的参数组合，
+                会比计算所有的参数组合要快很多，而且几乎不会过拟合，当然也有可能忽略了最优的组合参数。
+                所以如果你想让模型自动计算所有的参数组合，然后选择最优的，可以将stepwise设为False
+                information_criterion='aic',
+                test='adf',       # use adftest to find optimal 'd'
+                m=1,              # frequency of series
+                d=None,           # let model determine 'd'
+                （1）趋势参数
+                      p pp：趋势自回归阶数。
+                      d dd：趋势差分阶数。
+                      q qq：趋势移动平均阶数。
+                （2）季节性参数
+                      P PP：季节性自回归阶数。
+                      D DD：季节性差分阶数。
+                      Q QQ：季节性移动平均阶数。
+                      m mm：单个季节期间的时间步数。
+
+                与非季节性模型的区别在于，季节性模型都是以m为固定周期来做计算的，比如D就是季节性差分，
+                是用当前值减去上一个季节周期的值，P和Q和非季节性的p,q的区别也是在于前者是以季节窗口为单位，而后者是连续时间的。
+                上节介绍的auto arima的代码中，seasonal参数设为了false，构建季节性模型的时候，把该参数置为True，
+                然后对应的P，D，Q,m参数即可，代码如下：
+                # Seasonal - fit stepwise auto-ARIMA
+                smodel = pm.auto_arima(data, start_p=1, start_q=1,test='adf',
+                                         max_p=3, max_q=3, m=12,
+                                         start_P=0, seasonal=True,
+                                         d=None, D=1, trace=True,
+                                         error_action='ignore',
+                                         suppress_warnings=True,
+                                         stepwise=True)
+                 无季节模型参数
+              auto_arima(df.value, start_p=1, start_q=1,
+                              information_criterion='aic',
+                              test='adf',       # use adftest to find optimal 'd'
+                              max_p=3, max_q=3, # maximum p and q
+                              m=1,              # frequency of series
+                              d=None,           # let model determine 'd'
+                              seasonal=False,   # No Seasonality
+                              start_P=0,
+                              D=0,
+                              trace=True,
+                              error_action='ignore',
+                              suppress_warnings=True,
+                              stepwise=True)"""
+                # model1 = auto_arima(data, start_p=1, start_q=1, max_p=3, max_q=3, m=12, start_P=0, seasonal=True,
+                #                     d=None, D=1, trace=True, error_action='ignore', suppress_warnings=True, stepwise=True,
+                #                     )
+                model1 = auto_arima(data, start_p=1, start_q=1,
+                                    information_criterion='aic',
+                                    test='adf',  # use adftest to find optimal 'd'
+                                    max_p=3, max_q=3,  # maximum p and q
+                                    m=1,  # # 季节性周期长度，当m=1时则不考虑季节性
+                                    d=None,  # let model determine 'd'
+                                    seasonal=False,  # No Seasonality
+                                    start_P=0, D=0, trace=True,
+                                    error_action='ignore',
+                                    suppress_warnings=True,
+                                    stepwise=True  # stepwise为False则不进行完全组合遍历
+                                    )
+                model1.fit(data)
+                print(model1.summary())  # 生成一份模型报告返回预测结果， 标准误差， 和置信区间
+                print(model1.predict(n_periods=12))   # 为未来5天进行预测，
+                # import joblib
+                # joblib.dump(model1, r'D:\myzq\axzq\T0002\stock_load\thesis\kzz\model_save.pkl')
+                # clf = joblib.load("train_model.m")  # 模型从本地调回
+                # 所以可以建立ARIMA 模型，ARIMA(3,1,0)
+
+            dd = ""  # 画热力图
+            if dd == "thermodynamicOrder":
+                self.thermodynamicOrder(data)
+                # self.thermodynamicOrder(data['log_'])
+
+            dd = ""  # 计算自相关系数, 偏自相关系数,白噪声检验:Ljung-Box检验
+            if dd == "acf":
+                """检验residual是否是白噪声，如果是则无法预测.说白了就是因为平稳序列具有比较好的性质，具有时间平移不变性，
+                具体的说法是弱平稳时间序列均值为常数，协方差只与lag有关。其容易建立模型来预测未来，不平稳的不好搞。"""
+                from statsmodels.tsa import stattools
+                """计算自相关系数，这里设置滞后项为5期,默认是40期滞后.nlags指定了10，
+                所以就会最多对比当前期与10期之前的时间序列数据，这里10期就是10个交易日。
+                时间序列最常用来剔除周期性因素的方法当属差分了，它主要是对等周期间隔的数据进行线性求减.
+                自相关图和偏自相关图中浅蓝色条形的边界为 |2|/根号t ，T为序列的长度。由于随机扰动的存在，
+                自相关系数并不严格等于0，我们期望在95%的置信度下，相关系数均在 |2|/根号t之间。
+                如果一个序列中有较多自相关系数的值在边界之外，那么该序列很可能不是白噪声序列。
+                图中自相关系数均在边界之内，为白噪声序列"""
+                # acf = stattools.acf(data, nlags=5, fft=False)
+                # 计算偏自相关系数
+                # pacf = stattools.pacf(data, nlags=5)
+                # print(f'自相关系数为：{acf};\n偏自相关系数为：{pacf}')
+                from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+                """自相关图, 偏自相关图横坐标表示延迟阶数，纵坐标表示自相关系数"""
+                # plot_acf(data, lags=15)
+                # plot_pacf(data, lags=15)
+                # plt.tight_layout()
+                # plt.show()
+                order = (1, 0)
+                # model = stattools.ARMA(data, order).fit()
+                import statsmodels.api as sm  # 统计相关的库
+                model = sm.tsa.ARMA(data, order).fit()
+                # print(model.fittedvalues)
+                at = data['log_'] - model.fittedvalues
+                # print(at.head())
+                at2 = np.square(at)
+                plot_acf(at, lags=95)
+                plot_pacf(at, lags=95)
+                plt.tight_layout()
+                plt.show()
+                m = 95  # 我们检验25个自相关系数
+                acf, q, p = sm.tsa.acf(at2, nlags=m, qstat=True)  # 计算自相关系数 及p-value
+                out = np.c_[range(1, 96), acf[1:], q, p]
+                output = pd.DataFrame(out, columns=['lag', "AC", "Q", "P-value"])
+                output = output.set_index('lag')
+                # print(list(output["P-value"]))
+                print(output[output["P-value"] < 0.05])
+
+            dd = ""  # 画收益图
+            if dd == "plt":
+                import seaborn as sns
+                # rs = (np.log(df / df.shift(1))).dropna()
+                data.plot(figsize=(12, 5))
+                # plt.title('指数日对数收益率', size=15)
+                sns.displot(data, color='blue')  # 密度图
+                plt.show()
+
+            dd = ""
+            if dd == "plt2":  # 画涨幅中位数图和正太分布对比
+                self.quantile_plot(data['log_'])
+
+            dd = ""  # 时间序列平稳性单位根检验
+            if dd == "adf":
+                from statsmodels.tsa.stattools import adfuller
+                """
+                (-0.04391111656553232, 0.9547464774274733, 10, 22, {'1%': -3.769732625845229, '5%': -3.005425537190083, '10%': -2.6425009917355373}, 291.54354258641223)
+                第一个是adt检验的结果，简称为T值，表示t统计量。
+                第二个简称为p值，表示t统计量对应的概率值。
+                第三个表示延迟。
+                第四个表示测试的次数。
+                第五个是配合第一个一起看的，是在99%，95%，90%置信区间下的临界的ADF检验的值。
+                第一点，1%、%5、%10不同程度拒绝原假设的统计值和ADF Test result的比较，ADF Test result同时小于1%、5%、10%即说明非常好地拒绝该假设。本数据中，adf结果为-0.04391111656553232，大于三个level的统计值，接收假设，即存在单位根。
+                第二点，p值要求小于给定的显著水平，p值要小于0.05，等于0是最好的。本数据中，P-value 为 0.9547464774274733,大于三个level，接受假设，即存在单位根。
+                ADF检验的原假设是存在单位根，只要这个统计值是小于1%水平下的数字就可以极显著的拒绝原假设，认为数据平稳。注意，ADF值一般是负的，也有正的，但是它只有小于1%水平下的才能认为是及其显著的拒绝原假设。
+                对于ADF结果在1% 以上 5%以下的结果，也不能说不平稳，关键看检验要求是什么样子的。
+                adfuller(
+                    x,
+                    maxlag=None,
+                    regression="c",
+                    autolag="AIC",
+                    store=False,
+                    regresults=False,
+                )
+                (-11.450545565916247, 5.8728395141112274e-21, 1, 242, {'1%': -3.457664132155201, '5%': -2.8735585105960224, '10%': -2.5731749894132916}, 1150.6699808503472)
+                """
+                result = adfuller(data, regresults=False,)
+                # print(result)
+                print("\nresult is\n{}".format(result))
+                result_fromat = pd.Series(result[0:4], index=['Test Statistic', 'p-value', 'Lags Used', 'Number of Observations Used'])
+                for k, v in result[4].items():
+                    result_fromat['Critical Value (%s)' % k] = v
+                result_fromat['The maximized information criterion if autolag is not None.'] = result[5]
+                print("\nresult_fromat is\n{}".format(result_fromat))
+                print("\n\n===== adfuller()的回归模型系数 =====")
+                [t, p, c, r] = adfuller(x=data, regression='ctt', regresults=True)
+                print("r.resols.summary() is")
+                print(r.resols.summary())
+                print("\nr.resols.params are")
+                print(r.resols.params)
+
+
+# ksa = KzzStockArch()
+# ksa.adf_test(tab='sh.000001')
+# ksa.adf_test(tab='sh.603233')
+# ksa.adf_test(tab='sz.002624')
+
+
+# 获取可转债行情价并计算债券价值,隐含波动率
+class KzzPrice(object):
+    def __init__(self):
+        pass
+
+    @staticmethod  # 输入代码和时间段获取k线数据.
+    def ak_bond_price(code):
+        import akshare as ak
+        d = 'bond_zh_hs_cov_daily'
+        if d == "bond_zh_hs_cov_daily":
+            bond__daily = ak.bond_zh_hs_cov_daily(symbol=code)
+            print(bond__daily)
+            # 对数收益率 = log(收盘价/前一个收盘价)
+            bond__daily['log_'] = (np.log(bond__daily['close'] / bond__daily['close'].shift(periods=1, axis=0)) * 100).round(3)
+            bond__daily['up_change'] = ((bond__daily['close'] - bond__daily['close'].shift(periods=1, axis=0))/bond__daily['close'].shift(periods=1, axis=0) * 100).round(3)
+            bond__daily['bound_value'] = ""
+            bond__daily['interval'] = ""
+            bond__daily['implication_option'] = ""
+            bond__daily['implication_volatility'] = ""
+            # print(result[1:])
+        d = 'sq_lite'
+        if d == "sq_lite":
+            import sqlite3
+            db_path = r"D:\myzq\axzq\T0002\stock_load\thesis\kzz\monte.db"  # 数据库路径
+            with sqlite3.connect(db_path) as conn:
+                bond__daily.to_sql(code, con=conn, if_exists='replace', index=True)
+                # bond__daily[1:].to_sql(code, con=conn, if_exists='replace', index=True)
+                # conn.close()
+
+    # 静态函数和该类没有直接的交互，只是寄存在了该类的命名空间中
+    @staticmethod
+    def bond_value(code, start, end, interest='', aaa=''):
+        d = 'bond_value'
+        if d == "bond_value":
+            import sqlite3
+            import datetime
+            import time
+            import math
+            # interest = interest[::-1]
+            # print(interest)
+            db_path = r"D:\myzq\axzq\T0002\stock_load\thesis\kzz\monte.db"  # 数据库路径
+            with sqlite3.connect(db_path) as conn:
+                cur = conn.cursor()
+                data = pd.read_sql(r"select date,close from '{}'".format(code), conn, parse_dates=['date'])
+                # data = pd.read_sql(r"select date from '{}' ORDER BY date DESC".format(code), conn)
+                # print(data.head())
+                # print(data['date'][0])
+                # d1 = datetime.datetime(data[0])  # 第一个日期
+                d2 = datetime.datetime.strptime(end, '%Y-%m-%d')
+                time_start1 = time.clock()  # 记录开始时间
+                ii = -1
+                for d1 in data['date']:
+                    interval = (d2 - d1).days/365  # 两日期差距
+                    ii += 1
+                    # print("interval:", data['close'][ii])
+                    d = 'down'
+                    if d == "down":
+                        y_int = int(interval)  # 向下取整
+                        c = 0
+                        if y_int == 4:
+                            c = 1
+                        elif y_int == 3:
+                            c = 2
+                        elif y_int == 2:
+                            c = 3
+                        elif y_int == 1:
+                            c = 4
+                        elif y_int == 0:
+                            c = 5
+                        """
+                        interval=5.几时, y_int=5  c=0
+                             a=y_int-i  interval - a      b = i + c  interest[b]     aaa[b]
+                                                                     interest[6]=110
+                        i=5>>a=5-5=0>>  interval - 0=5. >>b = 5 + 0  interest[5]=2 > aaa[5]=3.327
+                        i=4>>a=5-4=1>>  interval - 1=4. >>b = 4 + 0  interest[4]=1.8 > aaa[4]=3.283
+                        i=3>>a=5-3=2>>  interval - 2=3. >>b = 3 + 0  interest[3]=1.5 > aaa[3]=3.11
+                        i=2>>a=5-2=3>>  interval - 3=2. >>b = 2 + 0  interest[2]=1.0 > aaa[2]=2.937
+                        i=1>>a=5-1=4>>  interval - 4=1. >>b = 1 + 0  interest[1]=0.6 > aaa[1]=2.697
+                        i=0>>a=5-0=5>>  interval - 5=0. >>b = 0 + 0  interest[0]=0.3 > aaa[0]=2.456
+
+                        interval=4.几时, y_int=4  c=1
+                             a=y_int-i  interval - a      b = i + c interest[b]       aaa[b]
+                        i=4>>a=4-4=0>>  interval - 0=4. >>b = 4 + 1 interest[5]=110 > aaa[5]=3.327
+                        i=3>>a=4-3=1>>  interval - 1=3. >>b = 3 + 1 interest[4]=1.8 > aaa[4]=3.283
+                        i=2>>a=4-2=2>>  interval - 2=2. >>b = 2 + 1 interest[3]=1.5 > aaa[3]=3.11
+                        i=1>>a=4-1=3>>  interval - 3=1. >>b = 1 + 1 interest[2]=1.0 > aaa[2]=2.937
+                        i=0>>a=4-0=4>>  interval - 4=0. >>b = 0 + 1 interest[1]=0.6 > aaa[1]=2.697
+
+                        interval=3.几时, y_int=3  c=2
+                             a=y_int-i  interval - a      b = i + c interest[b]         aaa[b]
+                        i=3>>a=3-3=0>>  interval - 0=3. >>b = 3 + 2 interest[5]=110 > aaa[5]=3.327
+                        i=2>>a=3-2=1>>  interval - 1=2. >>b = 2 + 2 interest[4]=1.8 > aaa[4]=3.283
+                        i=1>>a=3-1=2>>  interval - 2=1. >>b = 1 + 2 interest[3]=1.5 > aaa[3]=3.11
+                        i=0>>a=3-0=3>>  interval - 3=0. >>b = 0 + 2 interest[2]=1.0 > aaa[2]=2.937
+
+                        interval=2.几时, y_int=2  c=3
+                             a=y_int-i  interval - a      b = i + c interest[b]       aaa[b]
+                        i=2>>a=2-2=0>>  interval - 0=2. >>b = 2 + 3 interest[5]=110 > aaa[5]=3.327
+                        i=1>>a=2-1=1>>  interval - 1=1. >>b = 1 + 3 interest[4]=1.8 > aaa[4]=3.283
+                        i=0>>a=2-0=2>>  interval - 2=0. >>b = 0 + 3 interest[3]=1.5 > aaa[3]=3.11
+
+                        interval=1.几时, y_int=1  c=4
+                             a=y_int-i  interval - a      b = i + c interest[b]       aaa[b]
+                        i=1>>a=1-1=0>>  interval - 0=1. >>b = 1 + 4 interest[5]=110 > aaa[5]=3.327
+                        i=0>>a=1-0=1>>  interval - 1=0. >>b = 0 + 4 interest[4]=1.8 > aaa[4]=3.283
+
+                        interval=0.几时, y_int=0  c=5
+                             a=y_int-i  interval - a      b = i + c interest[b]       aaa[b]
+                        i=0>>a=0-0=0>>  interval - 0=0. >>b = 0 + 5 interest[5]=110 > aaa[5]=3.327
+                        """
+                        sum_value = 0
+                        for i in range(y_int, -1, -1):
+                            a = y_int-i
+                            b = i + c
+                            # print(a)
+                            # print(a, b, interest[b], 1+aaa[b]/100, interval - a)
+                            if i == y_int:
+                                le = len(interest)
+                                if le == 6:  # 包括最后一年利息
+                                    sum_value += ((interest[b]-(interest[b]-100)*0.2)/((1 + aaa[b]/100) ** (interval - a)))
+                                elif le == 7:
+                                    seven = interest[b+1]-(interest[b+1]-100)*0.2+interest[b]*0.8
+                                    sum_value += (seven/((1 + aaa[b]/100) ** (interval - a)))
+                            else:
+                                sum_value += ((interest[b]*0.8) / ((1 + aaa[b]/100) ** (interval - a)))
+                        # print("sum_value:", sum_value)
+                        d = ''
+                        if d == "sq_lite":
+                            sql_update = r"update {} set bound_value=?,interval=?,implication_option=? where date=?".format(code)
+                            # print("sum_value:", round(sum_value, 3), d1, sql_update)
+                            ar = (round(sum_value, 3), round(interval, 6), round(data['close'][ii]-sum_value, 3), str(d1))
+                            cur.execute(sql_update, ar)
+                time_end1 = time.clock()  # 记录结束时间
+                time_sum1 = time_end1 - time_start1  # 计算的时间差为程序的执行时间，单位为秒/s
+                print("time_sum1", time_sum1)
+                cur.close()
+
+kzs = KzzPrice()
+# kzs.ak_bond_price(code="sh113605")  #
+interest1 = [0.30, 0.60, 1.00, 1.50, 1.80, 110]  # 包含最后一期利息
+# interest=[0.30, 0.60, 1.00, 1.50, 1.80, 2.0, 110]
+kzs.bond_value(code="sh113605", start="2020-10-22", end="2026-10-22", interest=interest1,
+               aaa=[2.456, 2.697, 2.937, 3.11, 3.283, 3.327])
+
+
+
 
