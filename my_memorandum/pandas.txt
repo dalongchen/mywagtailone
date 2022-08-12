@@ -1,2 +1,4 @@
 日期格式2020-01-01 00:00:00=2020-01-01
 bond__daily.index = bond__daily.index.strftime('%Y-%m-%d')
+收盘价
+data_s.loc[data_s.收盘价 == 0, '收盘价'] = data_s.loc[data_s.收盘价 == 0, '前收盘']
