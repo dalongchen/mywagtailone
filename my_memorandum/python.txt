@@ -4,3 +4,4 @@ print("dr2324", search_span[0])
 if search_span:
     yy = [float(s) for s in re.findall(r'-?\d+\.?\d*', redeem_clause[search_span[0]-7: search_span[0]])]  # 字符串中取浮点数，int和负数
     y = yy[0]
+

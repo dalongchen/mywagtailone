@@ -1,5 +1,4 @@
 from baiduspider import BaiduSpider
-from pprint import pprint
 from time import sleep
 import time
 import datetime

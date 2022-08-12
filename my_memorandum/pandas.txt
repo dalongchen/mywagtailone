@@ -1,0 +1,2 @@
+日期格式2020-01-01 00:00:00=2020-01-01
+bond__daily.index = bond__daily.index.strftime('%Y-%m-%d')

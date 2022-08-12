@@ -24,3 +24,15 @@ having count(*) >1 --按num分组后找出表中num列重复，即出现次数�
 delete from kzz_date_frequent where rowid !=
 (select max(rowid) from kzz_date_frequent b where
 kzz_date_frequent.da=b.da and kzz_date_frequent.code=b.code)
+
+
+data['y_v_log'] = (np.sqrt(245) * data['log_'].rolling(245).std()).round(3)
+data = data.loc[:, ['y_v_change', 'y_v_log', 'date']]
+print(data.values)
+"""加列"""
+#sql2 = r"""alter table '{}' add y_v_change number(6),add y_v_log number(6)""".format(code)
+"""批量更新"""
+sql3 = "UPDATE '{}' SET y_v_change=(?),y_v_log=(?) WHERE date=(?)".format(code)
+# val_list = [[-5.21, '2017-08-04'], [1.16, '2017-08-07']] 元组可能好点
+# val_list = [(-5.1, '2020-11-13 00:00:00'), (1.6, '2020-11-16 00:00:00')]
+cur.executemany(sql3, data.values)

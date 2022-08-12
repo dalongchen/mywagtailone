@@ -132,3 +132,17 @@ z的标准差 ＝ E[(Z-E(Z))^2] = E[(X-μ)^2/σ^2]=σ^2/σ^2 = 1
 他的输入的范围大致就是2-8，但是你下一次再用新的数据进行归一化，比如说贵州茅台涨到了1200-1300，
 除非你能用之前的数据加进来再进行一次归一化，要不然你的数据就是！错误！的，因为你这一次1200-1300的范围直接归一化，
 那就有可能是2-4这个区间，相当于训练模型时200-600这个范围，所以答案再这么好看，也是错的。
+
+(1) 显示所有列
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_columns', 5) #最多显示5列
+(2) 显示所有行
+pd.set_option('display.max_rows', None)
+pd.set_option('display.max_rows', 10)#最多显示10行
+(3) 显示小数位数
+pd.set_option('display.float_format',lambda x: '%.2f'%x) #两位
+
+控制台打印时显示的2位小数：pd.set_option('precision', 2)
+
+滚动计算rolling年波动率
+# df['volatility'] = np.sqrt(245) * df['aa2'].rolling(245).std()

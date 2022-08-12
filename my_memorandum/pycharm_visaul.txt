@@ -1,0 +1,3 @@
+ctrl+j打开终端
+
+撤销与反撤销操作：Ctrl + z，Ctrl + Shift + z

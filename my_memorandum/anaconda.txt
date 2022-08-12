@@ -1,3 +1,5 @@
 注意先激活p36环境
 pip install numpy -i https://pypi.tuna.tsinghua.edu.cn/simple
+
+pip install -i https://pypi.tuna.tsinghua.edu.cn/simple pip -U
 conda install -c conda-forge arch-py
