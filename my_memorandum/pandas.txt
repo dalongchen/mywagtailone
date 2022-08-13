@@ -1,4 +1,6 @@
 日期格式2020-01-01 00:00:00=2020-01-01
 bond__daily.index = bond__daily.index.strftime('%Y-%m-%d')
-收盘价
+高级搜索和赋值，比循环快200倍
 data_s.loc[data_s.收盘价 == 0, '收盘价'] = data_s.loc[data_s.收盘价 == 0, '前收盘']
+不加.values是0.21second，加values0.07second，快3倍，values得到一个numpy数组
+data_s['股本'] = data_s['总市值'].values / data_s['收盘价'].values
